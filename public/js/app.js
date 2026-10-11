@@ -959,12 +959,22 @@ window.rejectCurrentStaffRequest = async function() {
 window.approveStaffRequest = async function(userId) {
   try {
     const res = await API.admin.approveStaffRequest(userId);
-    UI.showToast(res.message, 'success');
-    if (res.invitation_link) {
-      prompt(
-        `Staff invitation dispatched to email!\n\n(Important: Please check the Gmail Spam/Junk folder if not in Inbox).\n\nYou can also copy the direct password setup link:`,
-        res.invitation_link
-      );
+    if (res.warning) {
+      UI.showToast(res.message || res.warning, 'warning');
+      if (res.invitation_link) {
+        prompt(
+          `Staff request approved!\n\n⚠️ Note: ${res.warning}\n\nPlease copy and share this password setup link directly with the staff member:`,
+          res.invitation_link
+        );
+      }
+    } else {
+      UI.showToast(res.message, 'success');
+      if (res.invitation_link) {
+        prompt(
+          `Staff invitation dispatched to email!\n\n(Important: Please check the Gmail Spam/Junk folder if not in Inbox).\n\nYou can also copy the direct password setup link:`,
+          res.invitation_link
+        );
+      }
     }
     loadAdminView();
   } catch (err) {

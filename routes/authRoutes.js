@@ -252,7 +252,17 @@ router.post('/forgot-password', forgotPasswordRateLimiter, async (req, res) => {
     );
 
     // Send via Email Service Provider
-    await emailService.sendPasswordResetOTP(cleanEmail, user.name, otp);
+    try {
+      await emailService.sendPasswordResetOTP(cleanEmail, user.name, otp);
+    } catch (mailErr) {
+      console.error(`[FORGOT PASSWORD] Failed to dispatch OTP to ${cleanEmail}:`, mailErr.message);
+      console.log(`[PASSWORD RESET OTP RECOVERY] OTP for ${cleanEmail}: ${otp}`);
+      return res.status(503).json({
+        success: false,
+        message: `Unable to deliver password reset OTP email (${mailErr.message}). Cloud hosts like Render Free Tier block outbound SMTP ports (25, 465, 587). Please contact your administrator or configure an HTTPS email API (Resend/Brevo).`
+      });
+    }
+
     await logAudit(user.id, 'PASSWORD_RESET_REQUEST', `Password reset verification code dispatched for ${cleanEmail}`, req.ip);
 
     // Never return the raw OTP in API response
@@ -528,13 +538,19 @@ router.post('/request-staff-account', registrationRateLimiter, async (req, res) 
 
     const userId = userResult.lastID;
 
-    // Dispatch acknowledgment email to applicant
-    await emailService.sendStaffAccessRequestReceived(cleanEmail, name.trim(), role, employee_id, department);
+    // Dispatch acknowledgment email to applicant (safe, non-blocking)
+    let emailSent = true;
+    try {
+      await emailService.sendStaffAccessRequestReceived(cleanEmail, name.trim(), role, employee_id, department);
+    } catch (mailErr) {
+      emailSent = false;
+      console.warn(`[STAFF ACCESS REQUEST] Acknowledgment email could not be delivered to ${cleanEmail}: ${mailErr.message}. The request was saved.`);
+    }
 
     await logAudit(
       userId,
       'STAFF_ACCESS_REQUEST',
-      `New institutional staff request: ${cleanEmail} (${name}) as ${role.toUpperCase()} - Emp ID: ${employee_id || 'N/A'}, Dept: ${department}`,
+      `New institutional staff request: ${cleanEmail} (${name}) as ${role.toUpperCase()} - Emp ID: ${employee_id || 'N/A'}, Dept: ${department}${!emailSent ? ' (Email notification skipped: SMTP/network timed out)' : ''}`,
       req.ip
     );
 
@@ -635,7 +651,11 @@ router.post('/set-password', async (req, res) => {
       [hashedPassword, user.id]
     );
 
-    await emailService.sendPasswordSetSuccessNotification(cleanEmail, user.name, user.role);
+    try {
+      await emailService.sendPasswordSetSuccessNotification(cleanEmail, user.name, user.role);
+    } catch (mailErr) {
+      console.warn(`[SET PASSWORD] Confirmation email could not be delivered to ${cleanEmail}: ${mailErr.message}. Password update succeeded.`);
+    }
 
     await logAudit(
       user.id,

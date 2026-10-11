@@ -189,6 +189,17 @@ router.post('/staff-requests/:id/approve', async (req, res) => {
     const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
     const invitationLink = `${appUrl.replace(/\/$/, '')}/#set-password?token=${invitationToken}&email=${encodeURIComponent(user.email)}`;
 
+    // 1. Update user record FIRST in database so token and status are safely persisted
+    await dbHelper.run(
+      `UPDATE users
+       SET status = 'invited', invitation_token = ?, invitation_expires_at = ?
+       WHERE id = ?`,
+      [invitationToken, expiresAt, userId]
+    );
+
+    // 2. Attempt email dispatch (safe, non-blocking if Render blocks SMTP ports)
+    let emailSent = true;
+    let emailErrorMessage = null;
     try {
       await emailService.sendStaffInvitation(
         user.email,
@@ -201,29 +212,34 @@ router.post('/staff-requests/:id/approve', async (req, res) => {
         user.department
       );
     } catch (emailError) {
-      console.error('Staff invitation email failed:', emailError);
-      return res.status(500).json({
-        success: false,
-        message: `Invitation email could not be delivered: ${emailError.message}`
-      });
+      emailSent = false;
+      emailErrorMessage = emailError.message;
+      console.warn('[STAFF INVITATION] Outbound email failed or timed out:', emailError.message);
+      console.log(`[DIRECT PASSWORD SETUP LINK] Generated for ${user.email}: ${invitationLink}`);
     }
-
-    await dbHelper.run(
-      `UPDATE users
-       SET status = 'invited', invitation_token = ?, invitation_expires_at = ?
-       WHERE id = ?`,
-      [invitationToken, expiresAt, userId]
-    );
 
     await logAudit(
       req.user.id,
       isResend ? 'STAFF_INVITATION_RESENT' : 'STAFF_REQUEST_APPROVED',
-      `Admin ${isResend ? 're-dispatched invitation to' : 'approved staff request for'} ${user.email} (${user.name}) as ${user.role.toUpperCase()} [Emp ID: ${user.employee_id || 'N/A'}, Dept: ${user.department}]. Dispatched official invitation email.`,
+      `Admin ${isResend ? 're-dispatched invitation to' : 'approved staff request for'} ${user.email} (${user.name}) as ${user.role.toUpperCase()} [Emp ID: ${user.employee_id || 'N/A'}, Dept: ${user.department}].${emailSent ? ' Dispatched official invitation email.' : ' [Email timed out/blocked on Render; direct setup link generated]'}` ,
       req.ip
     );
 
+    if (!emailSent) {
+      return res.json({
+        success: true,
+        email_sent: false,
+        warning: `Staff request approved! Outbound email timed out (Render free tier blocks SMTP ports 25, 465, 587). Please copy the direct setup link below and share it directly with ${user.name}.`,
+        message: `Staff request approved! Note: Email delivery timed out on Render. Please copy and share the direct setup link below.`,
+        invitation_token: invitationToken,
+        invitation_link: invitationLink,
+        is_resend: isResend
+      });
+    }
+
     res.json({
       success: true,
+      email_sent: true,
       message: isResend
         ? `Invitation email re-dispatched to ${user.email}! (Please check Inbox and Spam/Junk folder)`
         : `Staff request approved! Official invitation email containing password setup link has been dispatched to ${user.email}. (Please check Inbox and Spam/Junk folder)`,
@@ -255,12 +271,16 @@ router.post('/staff-requests/:id/reject', async (req, res) => {
       [userId]
     );
 
-    await emailService.sendStaffRejectionNotification(
-      user.email,
-      user.name,
-      user.role,
-      reason || 'Staff credentials could not be verified against college roster.'
-    );
+    try {
+      await emailService.sendStaffRejectionNotification(
+        user.email,
+        user.name,
+        user.role,
+        reason || 'Staff credentials could not be verified against college roster.'
+      );
+    } catch (mailErr) {
+      console.warn(`[STAFF REJECTION] Rejection email to ${user.email} could not be delivered:`, mailErr.message);
+    }
 
     await logAudit(
       req.user.id,
@@ -348,7 +368,11 @@ router.post('/users', async (req, res) => {
       req.ip
     );
 
-    await emailService.sendAccountApprovedNotification(cleanEmail, name.trim(), role);
+    try {
+      await emailService.sendAccountApprovedNotification(cleanEmail, name.trim(), role);
+    } catch (mailErr) {
+      console.warn(`[STAFF PROVISIONING] Approval notification to ${cleanEmail} could not be delivered:`, mailErr.message);
+    }
 
     res.status(201).json({
       success: true,
@@ -391,9 +415,13 @@ router.put('/users/:id/verify', async (req, res) => {
       await dbHelper.run('UPDATE contractors SET registration_status = ? WHERE user_id = ?', [status, userId]);
     }
 
-    // Send notification
+    // Send notification (safe, non-blocking)
     if (status === 'approved') {
-      await emailService.sendAccountApprovedNotification(user.email, user.name, user.role);
+      try {
+        await emailService.sendAccountApprovedNotification(user.email, user.name, user.role);
+      } catch (mailErr) {
+        console.warn(`[USER VERIFICATION] Approval notification to ${user.email} could not be delivered:`, mailErr.message);
+      }
     }
 
     await logAudit(
@@ -534,7 +562,11 @@ router.put('/contractors/:id/verify', async (req, res) => {
       await dbHelper.run("UPDATE users SET status = 'active', email_verified = TRUE WHERE id = ?", [targetUserId]);
       const u = await dbHelper.get('SELECT * FROM users WHERE id = ?', [targetUserId]);
       if (u) {
-        await emailService.sendAccountApprovedNotification(u.email, u.name, 'contractor');
+        try {
+          await emailService.sendAccountApprovedNotification(u.email, u.name, 'contractor');
+        } catch (mailErr) {
+          console.warn(`[CONTRACTOR APPROVAL] Approval notification to ${u.email} could not be delivered:`, mailErr.message);
+        }
       }
     } else if (status === 'rejected') {
       await dbHelper.run("UPDATE users SET status = 'inactive' WHERE id = ?", [targetUserId]);
