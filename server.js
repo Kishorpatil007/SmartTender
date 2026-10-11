@@ -77,11 +77,11 @@ const startServer = async () => {
     await initSchema();
 
     const server = app.listen(PORT, () => {
-      console.log(`\n========================================================================`);
+
       console.log(`  MAHARASHTRA INSTITUTE OF TECHNOLOGY (MIT), CHHATRAPATI SAMBHAJINAGAR`);
       console.log(`  SMART E-TENDER SYSTEM ACTIVE [ENTERPRISE SECURITY ENABLED]`);
-      console.log(`  ACCESS URL: http://localhost:${PORT}`);
-      console.log(`========================================================================\n`);
+      const publicUrl = process.env.APP_URL || `http://localhost:${PORT}`;
+      console.log(`ACCESS URL: ${publicUrl}`);
     });
 
     server.on('error', (err) => {
