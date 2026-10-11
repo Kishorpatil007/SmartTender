@@ -229,8 +229,8 @@ router.post('/staff-requests/:id/approve', async (req, res) => {
       return res.json({
         success: true,
         email_sent: false,
-        warning: `Staff request approved! Outbound email timed out (Render free tier blocks SMTP ports 25, 465, 587). Please copy the direct setup link below and share it directly with ${user.name}.`,
-        message: `Staff request approved! Note: Email delivery timed out on Render. Please copy and share the direct setup link below.`,
+        warning: `Staff request approved! Outbound email notification was not delivered (${emailErrorMessage || 'Outbound email delivery blocked'}). Please copy the direct setup link below and share it directly with ${user.name}.`,
+        message: `Staff request approved! (Email not sent: ${emailErrorMessage || 'Render email restrictions'}). Copy setup link below.`,
         invitation_token: invitationToken,
         invitation_link: invitationLink,
         is_resend: isResend
