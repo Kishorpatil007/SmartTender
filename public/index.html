@@ -1,0 +1,1651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MIT Smart Tender Management System | E-Procurement Portal</title>
+  
+  <!-- Google Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  
+  <!-- Bootstrap 5.3 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/chatbot.css">
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header class="navbar navbar-expand-lg navbar-dark navbar-custom px-4 py-2.5 sticky-top">
+    <div class="container-fluid px-0">
+      <a class="navbar-brand d-flex align-items-center gap-2.5" href="javascript:void(0)" onclick="navigateTo('landing')">
+        <div class="bg-white text-primary p-2 rounded-3 d-flex align-items-center justify-content-center shadow-sm" style="width: 42px; height: 42px;">
+          <i class="bi bi-mortarboard-fill fs-4 text-primary"></i>
+        </div>
+        <div class="d-flex flex-column">
+          <div class="d-flex align-items-center gap-2">
+            <span class="fw-bold tracking-wide text-white" style="font-size: 1.15rem; letter-spacing: -0.2px;">MIT SMART TENDER MANAGEMENT SYSTEM</span>
+            <span class="brand-badge">MIT</span>
+          </div>
+          <span class="text-white-50" style="font-size: 0.68rem; letter-spacing: 0.8px;">MAHARASHTRA INSTITUTE OF TECHNOLOGY, CHHATRAPATI SAMBHAJINAGAR</span>
+        </div>
+      </a>
+
+      <!-- Right Header Actions -->
+      <div class="ms-auto d-flex align-items-center gap-3">
+        <!-- Single Unified Sign In / Register Entry -->
+        <div id="nav-guest-actions" class="d-flex gap-2">
+          <button class="btn btn-outline-light btn-sm px-3.5 py-1.5 rounded-pill shadow-sm" data-bs-toggle="modal" data-bs-target="#authModal">
+            <i class="bi bi-person-fill-lock me-1.5"></i> Sign In / Register
+          </button>
+        </div>
+
+        <!-- Authenticated User Profile & Logout -->
+        <div id="nav-user-actions" class="d-none d-flex align-items-center gap-3">
+          <div class="d-flex align-items-center gap-2 bg-black bg-opacity-25 px-3 py-1.5 rounded-pill border border-white border-opacity-10">
+            <span id="active-role-badge" class="badge bg-primary">ROLE</span>
+            <span id="current-user-name" class="text-white fw-semibold small">User Name</span>
+          </div>
+          <button id="nav-logout-btn" class="btn btn-sm btn-outline-light rounded-pill px-3" title="Sign Out">
+            <i class="bi bi-box-arrow-right me-1"></i> Logout
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- App Body Layout -->
+  <div class="app-container">
+    
+    <!-- Sidebar Navigation -->
+    <aside class="app-sidebar">
+      <ul class="nav flex-column sidebar-nav">
+        
+        <!-- Public Navigation -->
+        <div id="nav-section-public" class="role-nav-section">
+          <div class="sidebar-section-title">College Procurement</div>
+          <li class="nav-item">
+            <a class="nav-link active" data-view="landing">
+              <i class="bi bi-house-door"></i> Home Overview
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" data-view="tenders">
+              <i class="bi bi-search"></i> Browse Tenders
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" data-view="reports">
+              <i class="bi bi-bar-chart-line"></i> Reports & Analytics
+            </a>
+          </li>
+        </div>
+
+        <!-- Admin Navigation -->
+        <div id="nav-section-admin" class="role-nav-section d-none">
+          <div class="sidebar-section-title">Administration</div>
+          <li class="nav-item">
+            <a class="nav-link" data-view="admin">
+              <i class="bi bi-speedometer2"></i> Admin Dashboard
+            </a>
+          </li>
+        </div>
+
+        <!-- Tender Authority Navigation -->
+        <div id="nav-section-authority" class="role-nav-section d-none">
+          <div class="sidebar-section-title">Purchase Authority</div>
+          <li class="nav-item">
+            <a class="nav-link" data-view="authority">
+              <i class="bi bi-folder-check"></i> Manage Tenders
+            </a>
+          </li>
+        </div>
+
+        <!-- Contractor Navigation -->
+        <div id="nav-section-contractor" class="role-nav-section d-none">
+          <div class="sidebar-section-title">Contractor Workspace</div>
+          <li class="nav-item">
+            <a class="nav-link" data-view="contractor">
+              <i class="bi bi-briefcase"></i> Vendor Portal & Bids
+            </a>
+          </li>
+        </div>
+
+        <!-- Evaluator Navigation -->
+        <div id="nav-section-evaluator" class="role-nav-section d-none">
+          <div class="sidebar-section-title">Purchase Committee</div>
+          <li class="nav-item">
+            <a class="nav-link" data-view="evaluator">
+              <i class="bi bi-clipboard-data"></i> Evaluation Desk & L1
+            </a>
+          </li>
+        </div>
+
+      </ul>
+
+      <!-- Institutional Footnote -->
+      <div class="mt-auto px-4 py-3 border-top bg-light">
+        <div class="small text-muted mb-1">
+          <strong>MIT Chhatrapati Sambhajinagar</strong>
+        </div>
+        <div class="d-flex align-items-center gap-1.5" style="font-size: 0.72rem; color: #64748b;">
+          <i class="bi bi-shield-check text-success"></i>
+          <span>ISO 9001:2015 Certified Portal</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Stage -->
+    <main class="app-main">
+
+      <!-- ======================================================== -->
+      <!-- 1. LANDING VIEW                                          -->
+      <!-- ======================================================== -->
+      <div id="view-landing" class="view-container">
+        
+        <!-- Hero Section -->
+        <div class="p-5 mb-4 rounded-4 text-white position-relative overflow-hidden shadow-sm" style="background: linear-gradient(135deg, #0a2540 0%, #1e3a8a 60%, #1a56db 100%);">
+          <div class="row align-items-center">
+            <div class="col-lg-8">
+              <span class="badge bg-warning text-dark fw-bold px-3 py-1.5 rounded-pill mb-3">
+                <i class="bi bi-mortarboard-fill me-1"></i> E-Procurement & Bidding Portal
+              </span>
+              <h1 class="display-6 fw-bold mb-3">MIT Smart Tender Management System</h1>
+              <p class="lead text-white-50 mb-4" style="font-size: 1.05rem;">
+                Maharashtra Institute of Technology, Chhatrapati Sambhajinagar — Official digitized e-Tendering system for university laboratories, campus IT infrastructure, research equipment, civil renovation, and annual maintenance contracts with automated L1 evaluation and AI-assisted compliance verification.
+              </p>
+              <div class="d-flex flex-wrap gap-3">
+                <button class="btn btn-primary btn-lg px-4 py-2.5 shadow-sm" onclick="navigateTo('tenders')">
+                  <i class="bi bi-search me-2"></i> Explore Active Tenders
+                </button>
+                <button class="btn btn-outline-light btn-lg px-4 py-2.5" onclick="Chatbot.toggleChat()">
+                  <i class="bi bi-robot me-2 text-warning"></i> Ask MIT TenderBot AI
+                </button>
+              </div>
+            </div>
+            <div class="col-lg-4 d-none d-lg-block text-center">
+              <i class="bi bi-building-gear display-1 text-white opacity-50"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- High-level Metric Cards -->
+        <div class="row g-4 mb-5">
+          <div class="col-md-3">
+            <div class="stat-card">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <div class="stat-label">Total College Tenders</div>
+                  <div id="landing-stat-tenders" class="stat-value">0</div>
+                </div>
+                <div class="stat-icon-wrapper bg-primary bg-opacity-10 text-primary">
+                  <i class="bi bi-file-earmark-spreadsheet"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="stat-card">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <div class="stat-label">Open for Bidding</div>
+                  <div id="landing-stat-open" class="stat-value text-primary">0</div>
+                </div>
+                <div class="stat-icon-wrapper bg-info bg-opacity-10 text-info">
+                  <i class="bi bi-hourglass-split"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="stat-card">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <div class="stat-label">Verified Contractors</div>
+                  <div id="landing-stat-contractors" class="stat-value text-success">0</div>
+                </div>
+                <div class="stat-icon-wrapper bg-success bg-opacity-10 text-success">
+                  <i class="bi bi-person-badge"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="stat-card">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <div class="stat-label">Total Procurement Value</div>
+                  <div id="landing-stat-budget" class="stat-value text-dark" style="font-size: 1.35rem;">₹ 0</div>
+                </div>
+                <div class="stat-icon-wrapper bg-warning bg-opacity-10 text-warning">
+                  <i class="bi bi-cash-coin"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Featured Tenders -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h4 class="fw-bold mb-0">Featured Active Procurement Notices</h4>
+          <button class="btn btn-sm btn-link text-decoration-none fw-semibold" onclick="navigateTo('tenders')">
+            View All Tenders <i class="bi bi-arrow-right ms-1"></i>
+          </button>
+        </div>
+        <div id="landing-featured-tenders" class="row">
+          <!-- Populated by JavaScript -->
+        </div>
+
+        <!-- MIT Departments & Campus Facilities (Ref: mit.asia) -->
+        <div class="bg-white p-4 rounded-4 border mt-4">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold mb-0"><i class="bi bi-diagram-3-fill text-primary me-2"></i>Academic Schools & Campus Divisions</h5>
+            <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-1.5 rounded-pill small">MIT Chhatrapati Sambhajinagar (mit.asia)</span>
+          </div>
+          <div class="row g-3">
+            <div class="col-md-4">
+              <div class="p-3 bg-light rounded-3 h-100 border-start border-3 border-primary">
+                <div class="fw-bold text-dark"><i class="bi bi-cpu me-1.5 text-primary"></i> Computer Science & AI/DS</div>
+                <small class="text-muted">HPC GPU Cluster, Cloud Computing, AI & Machine Learning Research Labs</small>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="p-3 bg-light rounded-3 h-100 border-start border-3 border-primary">
+                <div class="fw-bold text-dark"><i class="bi bi-gear-wide-connected me-1.5 text-primary"></i> Mechanical & Robotics</div>
+                <small class="text-muted">6-DOF Industrial Robots, 5-Axis CNC Milling, Industrial 3D Printing Centre</small>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="p-3 bg-light rounded-3 h-100 border-start border-3 border-primary">
+                <div class="fw-bold text-dark"><i class="bi bi-building me-1.5 text-primary"></i> Civil & Campus Infrastructure</div>
+                <small class="text-muted">Structural testing, auditorium acoustics, hostel blocks & campus development</small>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="p-3 bg-light rounded-3 h-100 border-start border-3 border-primary">
+                <div class="fw-bold text-dark"><i class="bi bi-lightning-charge me-1.5 text-primary"></i> Electrical, EEE & ETC</div>
+                <small class="text-muted">500kW Solar Grid, Microgrid SCADA, Embedded IoT & Telecom hardware</small>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="p-3 bg-light rounded-3 h-100 border-start border-3 border-primary">
+                <div class="fw-bold text-dark"><i class="bi bi-bezier me-1.5 text-primary"></i> Plastic & Polymer Engineering</div>
+                <small class="text-muted">Advanced polymer processing, injection moulding, materials testing laboratory</small>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="p-3 bg-light rounded-3 h-100 border-start border-3 border-primary">
+                <div class="fw-bold text-dark"><i class="bi bi-palette me-1.5 text-primary"></i> School of Architecture & Design</div>
+                <small class="text-muted">B.Arch / B.Des / M.Arch studio workshops, CAD/CAM drafting laboratories</small>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="p-3 bg-light rounded-3 h-100 border-start border-3 border-primary">
+                <div class="fw-bold text-dark"><i class="bi bi-activity me-1.5 text-danger"></i> Marathwada MedTech Research</div>
+                <small class="text-muted">Healthcare device prototyping, bio-medical instrumentation & innovation hub</small>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="p-3 bg-light rounded-3 h-100 border-start border-3 border-primary">
+                <div class="fw-bold text-dark"><i class="bi bi-wifi me-1.5 text-primary"></i> Campus IT & 10G Network Cell</div>
+                <small class="text-muted">Campus Wi-Fi 6, 10G Optical backbone, data centre servers & firewalls</small>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="p-3 bg-light rounded-3 h-100 border-start border-3 border-primary">
+                <div class="fw-bold text-dark"><i class="bi bi-book me-1.5 text-primary"></i> Central Knowledge Resource Center</div>
+                <small class="text-muted">85,000+ volumes, IEEE/ScienceDirect digital subscriptions & e-learning</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ======================================================== -->
+      <!-- 2. TENDERS DIRECTORY VIEW                                -->
+      <!-- ======================================================== -->
+      <div id="view-tenders" class="view-container d-none">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h3 class="fw-bold mb-1">MIT College Tenders Directory</h3>
+            <p class="text-muted mb-0">Browse open, under-evaluation, and awarded procurement tenders</p>
+          </div>
+          <span id="tenders-count-badge" class="badge bg-primary px-3 py-2 rounded-pill fs-6">0 Tenders</span>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="card border-0 shadow-sm rounded-4 p-3 mb-4">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <div class="input-group">
+                <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" id="tender-search-input" class="form-control border-start-0" placeholder="Search by title, code, or keyword...">
+              </div>
+            </div>
+            <div class="col-md-4">
+              <select id="tender-dept-filter" class="form-select">
+                <option value="">All Academic & Campus Departments</option>
+                <option value="Department of Computer Science & Engineering (CSE)">Computer Science & Engineering (CSE)</option>
+                <option value="Department of Artificial Intelligence & Data Science (AI & DS)">Artificial Intelligence & Data Science (AI & DS)</option>
+                <option value="Department of Mechanical Engineering & Robotics">Mechanical Engineering & Robotics</option>
+                <option value="Department of Civil Engineering & Infrastructure">Civil Engineering & Infrastructure</option>
+                <option value="Department of Electrical & Electronics Engineering (EEE)">Electrical & Electronics Engineering (EEE)</option>
+                <option value="Department of Electronics & Telecommunication (ETC)">Electronics & Telecommunication (ETC)</option>
+                <option value="Department of Plastic & Polymer Engineering">Plastic & Polymer Engineering</option>
+                <option value="School of Architecture & Design">School of Architecture & Design (B.Arch / B.Des)</option>
+                <option value="Department of Management Studies (MBA / MCA / BBA)">Management Studies (MBA / MCA / BBA)</option>
+                <option value="Marathwada MedTech Innovation Lab & Research Centre">Marathwada MedTech Innovation Lab</option>
+                <option value="Central Library & Knowledge Resource Centre">Central Library & Knowledge Resource Centre</option>
+                <option value="Campus Estate, Hostels & Maintenance Division">Campus Estate & Infrastructure</option>
+                <option value="Campus IT & 10G Network Infrastructure Division">Campus IT & Network Cell</option>
+                <option value="Electrical Substations & Solar Energy Cell">Electrical & Solar Energy Cell</option>
+                <option value="Central Purchase & Procurement Committee">Central Purchase Committee</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <select id="tender-status-filter" class="form-select">
+                <option value="">All Tender Statuses</option>
+                <option value="published">Published / Open for Bidding</option>
+                <option value="under_evaluation">Under Evaluation</option>
+                <option value="awarded">Awarded</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tenders Grid -->
+        <div id="tenders-grid-container" class="row">
+          <!-- Populated by JavaScript -->
+        </div>
+      </div>
+
+      <!-- ======================================================== -->
+      <!-- 3. TENDER AUTHORITY WORKSPACE                            -->
+      <!-- ======================================================== -->
+      <div id="view-authority" class="view-container d-none">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h3 class="fw-bold mb-1">Tender Authority Workspace</h3>
+            <p class="text-muted mb-0">Create, publish, and manage college tenders & BoQ documents</p>
+          </div>
+          <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTenderModal">
+            <i class="bi bi-plus-circle me-1"></i> Create New Tender
+          </button>
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-4 p-4">
+          <h5 class="fw-bold mb-3">Institutional Tenders Register</h5>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>Tender Code</th>
+                  <th>Title</th>
+                  <th>Department</th>
+                  <th>Budget</th>
+                  <th>Deadline</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="authority-tenders-table-body">
+                <!-- Populated by JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======================================================== -->
+      <!-- 4. CONTRACTOR / BIDDER PORTAL                            -->
+      <!-- ======================================================== -->
+      <div id="view-contractor" class="view-container d-none">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h3 class="fw-bold mb-1">Contractor / Bidder Portal</h3>
+            <p class="text-muted mb-0">Track your submitted bids, quotations, and awarded contracts</p>
+          </div>
+          <button class="btn btn-outline-primary" onclick="navigateTo('tenders')">
+            <i class="bi bi-search me-1"></i> Browse Open Tenders
+          </button>
+        </div>
+
+        <!-- Verification Alert Banner -->
+        <div id="contractor-pending-alert" class="alert alert-warning border-0 rounded-4 d-none d-flex align-items-center gap-3 p-3 mb-4 shadow-sm">
+          <i class="bi bi-exclamation-triangle-fill fs-3 text-warning"></i>
+          <div>
+            <h6 class="fw-bold mb-0">Account Pending Verification</h6>
+            <small>Your vendor registration is currently being verified by the MIT College Registrar. You will be authorized to submit bids once approved.</small>
+          </div>
+        </div>
+
+        <!-- Contractor Overview Cards -->
+        <div class="row g-4 mb-4">
+          <div class="col-md-3">
+            <div class="stat-card">
+              <div class="stat-label">Total Bids Submitted</div>
+              <div id="contractor-stat-bids" class="stat-value">0</div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="stat-card">
+              <div class="stat-label">Tenders Won (Awarded)</div>
+              <div id="contractor-stat-won" class="stat-value text-success">0</div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="stat-card">
+              <div class="stat-label">Active Bids in Review</div>
+              <div id="contractor-stat-active" class="stat-value text-primary">0</div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="stat-card">
+              <div class="stat-label">Total Awarded Value</div>
+              <div id="contractor-stat-value" class="stat-value text-dark" style="font-size: 1.35rem;">₹ 0</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Profile Details Strip -->
+        <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h5 id="contractor-company-name" class="fw-bold mb-1">Company Name</h5>
+              <div class="text-muted small">License / GSTIN: <code id="contractor-license-num">N/A</code></div>
+            </div>
+            <div id="contractor-status-pill">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- My Bids Table -->
+        <div class="card border-0 shadow-sm rounded-4 p-4">
+          <h5 class="fw-bold mb-3">Submitted Bids & Proposals</h5>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>Tender Code</th>
+                  <th>Title</th>
+                  <th>Department</th>
+                  <th>Quotation Amount</th>
+                  <th>Submitted On</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="contractor-bids-table-body">
+                <!-- Populated by JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======================================================== -->
+      <!-- 5. EVALUATOR DESK & L1 MATRIX                            -->
+      <!-- ======================================================== -->
+      <div id="view-evaluator" class="view-container d-none">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h3 class="fw-bold mb-1">Purchase & Technical Evaluation Desk</h3>
+            <p class="text-muted mb-0">Evaluate technical proposals, generate L1 comparative statements, and award contracts</p>
+          </div>
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-4 p-4">
+          <h5 class="fw-bold mb-3">Tenders in Evaluation Stage</h5>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>Tender Code</th>
+                  <th>Title</th>
+                  <th>Department</th>
+                  <th>Budget</th>
+                  <th>Bidders</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="evaluator-tenders-table-body">
+                <!-- Populated by JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======================================================== -->
+      <!-- 6. ADMIN DASHBOARD VIEW                                  -->
+      <!-- ======================================================== -->
+      <div id="view-admin" class="view-container d-none">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h3 class="fw-bold mb-1">MIT College Central Administration</h3>
+            <p class="text-muted mb-0">User management, contractor approvals, and live audit trail</p>
+          </div>
+        </div>
+
+        <!-- Institutional Administrator Banner -->
+        <div id="admin-mode-banner"></div>
+
+        <div class="row g-4 mb-4">
+          <div class="col-md-3">
+            <div class="stat-card">
+              <div class="stat-label">Total Users</div>
+              <div id="admin-stat-users" class="stat-value">0</div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="stat-card">
+              <div class="stat-label">Total Vendors</div>
+              <div id="admin-stat-contractors" class="stat-value">0</div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="stat-card">
+              <div class="stat-label">Pending Verification</div>
+              <div id="admin-stat-pending" class="stat-value text-warning">0</div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="stat-card">
+              <div class="stat-label">Total College Budget</div>
+              <div id="admin-stat-budget" class="stat-value text-success" style="font-size: 1.35rem;">₹ 0</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Institutional Staff Requests & Approvals Queue (Authority & Evaluators) -->
+        <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+          <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+            <div>
+              <h5 class="fw-bold mb-0 d-inline-block">
+                <i class="bi bi-person-badge-fill text-warning me-2"></i>Institutional Staff Access Requests & Directory
+              </h5>
+              <span id="admin-pending-staff-badge" class="badge bg-warning text-dark rounded-pill ms-2" style="font-size: 0.75rem;">0 Pending</span>
+            </div>
+            <div class="d-flex gap-2">
+              <div class="btn-group btn-group-sm" role="group" id="admin-staff-filter-group">
+                <button type="button" class="btn btn-outline-primary active" onclick="filterAdminStaff('all', this)">All Staff</button>
+                <button type="button" class="btn btn-outline-warning text-dark" onclick="filterAdminStaff('pending', this)">Pending Requests</button>
+                <button type="button" class="btn btn-outline-info text-dark" onclick="filterAdminStaff('invited', this)">Invited</button>
+                <button type="button" class="btn btn-outline-success" onclick="filterAdminStaff('active', this)">Active</button>
+              </div>
+              <button class="btn btn-sm btn-primary" onclick="openProvisionStaffModal()">
+                <i class="bi bi-person-plus-fill me-1"></i> Provision Staff Directly
+              </button>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>Staff Member & Emp ID</th>
+                  <th>Designation & Department</th>
+                  <th>Official Contact</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th>Administrative Actions</th>
+                </tr>
+              </thead>
+              <tbody id="admin-staff-table-body">
+                <!-- Populated by JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Contractor Verification Queue -->
+        <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+          <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+            <h5 class="fw-bold mb-0">
+              <i class="bi bi-patch-check-fill text-primary me-2"></i>Vendor Registration & KYC Verification Queue
+              <span id="admin-pending-queue-badge" class="badge bg-warning text-dark rounded-pill ms-2" style="font-size: 0.75rem;">0 Pending</span>
+            </h5>
+            <div class="btn-group btn-group-sm" role="group" id="admin-vendor-filter-group">
+              <button type="button" class="btn btn-outline-primary active" onclick="filterAdminVendors('all', this)">All Vendors</button>
+              <button type="button" class="btn btn-outline-warning text-dark" onclick="filterAdminVendors('pending', this)">Pending KYC</button>
+              <button type="button" class="btn btn-outline-success" onclick="filterAdminVendors('approved', this)">Verified</button>
+              <button type="button" class="btn btn-outline-danger" onclick="filterAdminVendors('rejected', this)">Rejected</button>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>Company Name</th>
+                  <th>License / Class</th>
+                  <th>GSTIN / PAN</th>
+                  <th>Representative</th>
+                  <th>Experience</th>
+                  <th>Status</th>
+                  <th>Verification Action</th>
+                </tr>
+              </thead>
+              <tbody id="admin-contractors-table-body">
+                <!-- Populated by JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Audit Trail -->
+        <div class="card border-0 shadow-sm rounded-4 p-4">
+          <h5 class="fw-bold mb-3"><i class="bi bi-clock-history text-primary me-2"></i>System Audit Trail Log</h5>
+          <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>Action</th>
+                  <th>Details</th>
+                  <th>User / Role</th>
+                  <th>Timestamp</th>
+                </tr>
+              </thead>
+              <tbody id="admin-audit-logs-body">
+                <!-- Populated by JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======================================================== -->
+      <!-- 7. REPORTS & ANALYTICS VIEW                              -->
+      <!-- ======================================================== -->
+      <div id="view-reports" class="view-container d-none">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h3 class="fw-bold mb-1">Procurement Analytics & Reports</h3>
+            <p class="text-muted mb-0">Departmental expenditure charts, official PDF statements, and vendor rankings</p>
+          </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="row g-4 mb-4">
+          <div class="col-md-7">
+            <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+              <h5 class="fw-bold mb-3">Procurement Allocation by Department</h5>
+              <div style="height: 280px;">
+                <canvas id="chart-dept-budget"></canvas>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-5">
+            <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+              <h5 class="fw-bold mb-3">Tender Lifecycle Status</h5>
+              <div style="height: 280px;">
+                <canvas id="chart-tender-status"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Official History & PDF Reports Table -->
+        <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+          <h5 class="fw-bold mb-3"><i class="bi bi-file-earmark-pdf-fill text-danger me-2"></i>Official MIT Statements & Letters of Award (LOA)</h5>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>Code</th>
+                  <th>Title</th>
+                  <th>Department</th>
+                  <th>Budget</th>
+                  <th>Awarded Amount</th>
+                  <th>Winning Vendor</th>
+                  <th>Status</th>
+                  <th>Official PDF Download</th>
+                </tr>
+              </thead>
+              <tbody id="reports-history-table-body">
+                <!-- Populated by JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Contractor Performance Leaderboard -->
+        <div class="card border-0 shadow-sm rounded-4 p-4">
+          <h5 class="fw-bold mb-3"><i class="bi bi-trophy-fill text-warning me-2"></i>Contractor Performance & Win Rate Leaderboard</h5>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>Company Name</th>
+                  <th>License</th>
+                  <th>Bids Submitted</th>
+                  <th>Tenders Won</th>
+                  <th>Win Rate</th>
+                  <th>Avg Technical Score</th>
+                  <th>Total Contract Value</th>
+                </tr>
+              </thead>
+              <tbody id="reports-contractor-perf-body">
+                <!-- Populated by JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- FLOATING AI CHATBOT WIDGET ("MIT TenderBot")             -->
+  <!-- ======================================================== -->
+  <div class="ai-chat-fab">
+    <div id="ai-chat-tooltip" class="ai-chat-tooltip d-none d-md-block">
+      Need help? Ask MIT TenderBot AI
+    </div>
+    <button id="ai-chat-trigger" class="ai-chat-btn" title="Open AI Procurement Assistant">
+      <i class="bi bi-robot"></i>
+      <span class="ai-chat-badge">AI</span>
+    </button>
+  </div>
+
+  <!-- AI Chat Window -->
+  <div id="ai-chat-window" class="ai-chat-window">
+    <!-- Chat Header -->
+    <div class="ai-chat-header">
+      <div class="d-flex align-items-center gap-2.5">
+        <div class="ai-avatar">
+          <i class="bi bi-robot text-white"></i>
+        </div>
+        <div>
+          <div class="fw-bold" style="font-size: 0.95rem;">MIT TenderBot AI</div>
+          <small class="text-white-50" style="font-size: 0.72rem;">Procurement & Bidding Assistant</small>
+        </div>
+      </div>
+      <button id="ai-chat-close" class="btn btn-sm btn-link text-white text-decoration-none p-1">
+        <i class="bi bi-x-lg fs-6"></i>
+      </button>
+    </div>
+
+    <!-- Messages Container -->
+    <div id="ai-chat-messages" class="ai-chat-messages">
+      <div class="ai-message bot">
+        <div class="ai-avatar"><i class="bi bi-robot"></i></div>
+        <div class="ai-msg-bubble">
+          Hello! 👋 I am <strong>MIT TenderBot</strong>, the AI Procurement Assistant for <strong>Maharashtra Institute of Technology (MIT), Chhatrapati Sambhajinagar</strong>.<br><br>
+          Ask me anything about active college tenders, eligibility criteria, EMD rules, L1 ranking formulas, or how to apply for bids!
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Suggestions -->
+    <div id="ai-quick-suggestions" class="ai-quick-suggestions">
+      <!-- Populated dynamically by chatbot.js -->
+    </div>
+
+    <!-- Chat Input Area -->
+    <div class="ai-chat-input-area">
+      <input type="text" id="ai-chat-input" placeholder="Ask about tenders, deadlines, or bidding rules..." autocomplete="off">
+      <button id="ai-send-btn" class="ai-send-btn" title="Send Message">
+        <i class="bi bi-arrow-up-short fs-4"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODALS                                                   -->
+  <!-- ======================================================== -->
+
+  <!-- 1. Real Authentication Modal (Sign In / Register / Staff Access Request) -->
+  <div class="modal fade" id="authModal" tabindex="-1" aria-labelledby="authModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header border-bottom-0 pb-0">
+          <ul class="nav nav-pills nav-fill w-100 bg-light p-1 rounded-pill" id="authTab" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active rounded-pill fw-semibold py-2 small" id="tab-signin-btn" data-bs-toggle="pill" data-bs-target="#tab-signin" type="button" role="tab">
+                <i class="bi bi-box-arrow-in-right me-1"></i>Sign In
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link rounded-pill fw-semibold py-2 small" id="tab-register-btn" data-bs-toggle="pill" data-bs-target="#tab-register" type="button" role="tab">
+                <i class="bi bi-briefcase me-1"></i>Contractor KYC
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link rounded-pill fw-semibold py-2 small" id="tab-staff-request-btn" data-bs-toggle="pill" data-bs-target="#tab-staff-request" type="button" role="tab">
+                <i class="bi bi-person-badge me-1"></i>Request Staff Account
+              </button>
+            </li>
+          </ul>
+        </div>
+        <div class="modal-body pt-3">
+          <div class="tab-content" id="authTabContent">
+            
+            <!-- Sign In Tab -->
+            <div class="tab-pane fade show active" id="tab-signin" role="tabpanel">
+              <form id="signin-form">
+                <div class="mb-3">
+                  <label class="form-label small fw-semibold">Email Address</label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-light"><i class="bi bi-envelope text-muted"></i></span>
+                    <input type="email" id="signin-email" class="form-control" placeholder="name@mit.asia or vendor@domain.com" required>
+                  </div>
+                </div>
+                <div class="mb-4">
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <label class="form-label small fw-semibold mb-0">Password</label>
+                    <a href="javascript:void(0)" onclick="openForgotPasswordModal()" class="text-primary text-decoration-none small fw-semibold">
+                      <i class="bi bi-question-circle me-1"></i>Forgot Password?
+                    </a>
+                  </div>
+                  <div class="input-group">
+                    <span class="input-group-text bg-light"><i class="bi bi-lock text-muted"></i></span>
+                    <input type="password" id="signin-password" class="form-control" placeholder="Enter your password" required>
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold mb-3">
+                  <i class="bi bi-box-arrow-in-right me-1"></i> Sign In to Portal
+                </button>
+                <div class="text-center pt-2 border-top">
+                  <a href="javascript:void(0)" onclick="openSetPasswordModal()" class="text-decoration-none small text-muted">
+                    <i class="bi bi-envelope-open me-1 text-primary"></i> Received an official staff invitation? <strong class="text-primary">Set Password</strong>
+                  </a>
+                </div>
+              </form>
+            </div>
+
+            <!-- Register Tab (Contractor / Bidder Onboarding Only) -->
+            <div class="tab-pane fade" id="tab-register" role="tabpanel">
+              <form id="register-form">
+                <input type="hidden" id="reg-role" value="contractor">
+                
+                <div class="alert alert-primary bg-primary bg-opacity-10 border-0 rounded-3 py-2 px-3 mb-3 d-flex align-items-center gap-2.5">
+                  <i class="bi bi-briefcase-fill text-primary fs-5"></i>
+                  <div>
+                    <div class="fw-bold text-dark" style="font-size: 0.85rem;">Contractor / Bidder KYC Onboarding</div>
+                    <div class="text-muted" style="font-size: 0.72rem;">* Vendors register here for KYC verification. Institutional staff use "Request Staff Account".</div>
+                  </div>
+                </div>
+
+                <div class="mb-2">
+                  <label class="form-label small fw-semibold">Full Name / Representative</label>
+                  <input type="text" id="reg-name" class="form-control form-control-sm" placeholder="e.g. Rajendra Shinde" required>
+                </div>
+                <div class="mb-2">
+                  <label class="form-label small fw-semibold">Official Email Address</label>
+                  <input type="email" id="reg-email" class="form-control form-control-sm" placeholder="contact@company.com" required>
+                </div>
+                <div class="row g-2 mb-1">
+                  <div class="col-6">
+                    <label class="form-label small fw-semibold">Password</label>
+                    <input type="password" id="reg-password" class="form-control form-control-sm" placeholder="Min 8 chars, 1 Upper, 1 Special" required>
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label small fw-semibold">Confirm Password</label>
+                    <input type="password" id="reg-confirm-password" class="form-control form-control-sm" placeholder="Re-enter password" required>
+                  </div>
+                </div>
+                <div class="mb-2">
+                  <div class="text-muted" style="font-size: 0.7rem;">
+                    <i class="bi bi-shield-lock me-1 text-primary"></i> Must contain 8+ chars with uppercase, lowercase, number & special char.
+                  </div>
+                </div>
+
+                <div class="row g-2 mb-2">
+                  <div class="col-6">
+                    <label class="form-label small fw-semibold">Department / Trade</label>
+                    <input type="text" id="reg-dept" class="form-control form-control-sm" placeholder="e.g. Civil Works or IT Hardware">
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label small fw-semibold">Contact Phone</label>
+                    <input type="text" id="reg-phone" class="form-control form-control-sm" placeholder="+91 9822000000">
+                  </div>
+                </div>
+
+                <!-- Contractor Specific Fields -->
+                <div id="register-contractor-fields" class="p-2.5 bg-light rounded-3 mb-3 border">
+                  <div class="small fw-bold text-primary mb-2"><i class="bi bi-building me-1"></i> Contractor KYC & Business Credentials</div>
+                  <div class="mb-2">
+                    <label class="form-label small fw-semibold">Company / Firm Name</label>
+                    <input type="text" id="reg-company" class="form-control form-control-sm" placeholder="e.g. Shinde Infratech Pvt Ltd" required>
+                  </div>
+                  <div class="row g-2 mb-2">
+                    <div class="col-6">
+                      <label class="form-label small fw-semibold">License / PWD Class</label>
+                      <input type="text" id="reg-license" class="form-control form-control-sm" placeholder="e.g. MH-PWD-CLASS-A-4491" required>
+                    </div>
+                    <div class="col-6">
+                      <label class="form-label small fw-semibold">Experience (Years)</label>
+                      <input type="number" id="reg-experience" class="form-control form-control-sm" value="5" min="0">
+                    </div>
+                  </div>
+                  <div class="row g-2">
+                    <div class="col-6">
+                      <label class="form-label small fw-semibold">GSTIN Number</label>
+                      <input type="text" id="reg-gst" class="form-control form-control-sm" placeholder="27AAACT9988G1ZQ">
+                    </div>
+                    <div class="col-6">
+                      <label class="form-label small fw-semibold">PAN Card Number</label>
+                      <input type="text" id="reg-pan" class="form-control form-control-sm" placeholder="AAACT9988G">
+                    </div>
+                  </div>
+                </div>
+
+                <div class="alert alert-warning py-1.5 px-2.5 small rounded-3 mb-3 d-flex align-items-center gap-2" style="font-size: 0.72rem;">
+                  <i class="bi bi-shield-exclamation text-warning fs-6"></i>
+                  <div>All vendor accounts undergo verification by Central Administration prior to bidding access.</div>
+                </div>
+
+                <button type="submit" class="btn btn-success w-100 py-2 fw-semibold">
+                  <i class="bi bi-person-plus me-1"></i> Submit Registration for Verification
+                </button>
+              </form>
+            </div>
+
+            <!-- Tab 3: Request Institutional Staff Account (Authority / Evaluator) -->
+            <div class="tab-pane fade" id="tab-staff-request" role="tabpanel">
+              <form id="staff-request-form">
+                <div class="alert alert-warning bg-warning bg-opacity-10 border-0 rounded-3 py-2 px-3 mb-3 d-flex align-items-center gap-2.5">
+                  <i class="bi bi-mortarboard-fill text-warning fs-5"></i>
+                  <div>
+                    <div class="fw-bold text-dark" style="font-size: 0.85rem;">MIT Institutional Staff Access Request</div>
+                    <div class="text-muted" style="font-size: 0.72rem;">Submit your details. Central Admin will verify your credentials and dispatch an invitation link to set your password.</div>
+                  </div>
+                </div>
+
+                <div class="mb-2">
+                  <label class="form-label small fw-semibold">Staff Full Name</label>
+                  <input type="text" id="staff-req-name" class="form-control form-control-sm" placeholder="e.g. Dr. Rajesh Patil" required>
+                </div>
+
+                <div class="mb-2">
+                  <label class="form-label small fw-semibold">Official Institutional Email</label>
+                  <input type="email" id="staff-req-email" class="form-control form-control-sm" placeholder="e.g. rajesh@department.gov.in or rajesh.patil@mit.asia" required>
+                </div>
+
+                <div class="row g-2 mb-2">
+                  <div class="col-6">
+                    <label class="form-label small fw-semibold">Institutional Role</label>
+                    <select id="staff-req-role" class="form-select form-select-sm" required>
+                      <option value="authority">Tender Authority</option>
+                      <option value="evaluator">Evaluator / Committee</option>
+                    </select>
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label small fw-semibold">Employee ID / Code</label>
+                    <input type="text" id="staff-req-empid" class="form-control form-control-sm" placeholder="e.g. EE1024 or MIT-204" required>
+                  </div>
+                </div>
+
+                <div class="row g-2 mb-2">
+                  <div class="col-6">
+                    <label class="form-label small fw-semibold">Official Designation</label>
+                    <input type="text" id="staff-req-designation" class="form-control form-control-sm" placeholder="e.g. Executive Engineer / HOD" required>
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label small fw-semibold">Contact Phone / Intercom</label>
+                    <input type="text" id="staff-req-phone" class="form-control form-control-sm" placeholder="+91-9822012345">
+                  </div>
+                </div>
+
+                <div class="mb-2">
+                  <label class="form-label small fw-semibold">Department / Academic Division</label>
+                  <select id="staff-req-dept" class="form-select form-select-sm" required>
+                    <option value="Department of Civil Engineering & Infrastructure">Civil Engineering & Infrastructure</option>
+                    <option value="Department of Computer Science & Engineering (CSE)">Computer Science & Engineering (CSE)</option>
+                    <option value="Department of Artificial Intelligence & Data Science (AI & DS)">Artificial Intelligence & Data Science (AI & DS)</option>
+                    <option value="Department of Mechanical Engineering & Robotics">Mechanical Engineering & Robotics</option>
+                    <option value="Department of Electrical & Electronics Engineering (EEE)">Electrical & Electronics Engineering (EEE)</option>
+                    <option value="Department of Electronics & Telecommunication (ETC)">Electronics & Telecommunication (ETC)</option>
+                    <option value="Central Library & Knowledge Resource Centre">Central Library & Knowledge Resource Centre</option>
+                    <option value="Campus Estate, Hostels & Maintenance Division">Campus Estate & Infrastructure</option>
+                    <option value="Central Purchase & Procurement Committee">Central Purchase Committee</option>
+                  </select>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label small fw-semibold">Official Justification / Scope</label>
+                  <textarea id="staff-req-justification" class="form-control form-control-sm" rows="2" placeholder="e.g. Authorized officer for civil works and infrastructure tender creation."></textarea>
+                </div>
+
+                <div class="alert alert-info py-1.5 px-2.5 small rounded-3 mb-3 d-flex align-items-center gap-2" style="font-size: 0.72rem;">
+                  <i class="bi bi-envelope-paper text-primary fs-6"></i>
+                  <div>You will receive an official invitation link via email to configure your password once approved by Admin.</div>
+                </div>
+
+                <button type="submit" id="staff-req-submit-btn" class="btn btn-primary w-100 py-2 fw-semibold">
+                  <i class="bi bi-send-check me-1"></i> Submit Access Request
+                </button>
+              </form>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Tender Detail Modal -->
+  <div class="modal fade" id="tenderDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div>
+            <span id="modal-tender-code" class="tender-code me-2">MIT-TND-2026-000</span>
+            <span id="modal-tender-status"></span>
+            <h5 id="modal-tender-title" class="fw-bold mt-2 mb-0">Tender Title</h5>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <div class="p-2.5 bg-light rounded-3">
+                <small class="text-muted d-block">Indenting College Department:</small>
+                <strong id="modal-tender-dept" class="text-dark">-</strong>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="p-2.5 bg-light rounded-3">
+                <small class="text-muted d-block">Estimated Budget Allocation:</small>
+                <strong id="modal-tender-budget" class="text-success fs-6">-</strong>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="p-2.5 bg-light rounded-3">
+                <small class="text-muted d-block">EMD Deposit:</small>
+                <strong id="modal-tender-emd" class="text-dark">-</strong>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="p-2.5 bg-light rounded-3">
+                <small class="text-muted d-block">Submission Deadline:</small>
+                <strong id="modal-tender-deadline" class="text-danger">-</strong>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="p-2.5 bg-light rounded-3">
+                <small class="text-muted d-block">Bid Opening Date:</small>
+                <strong id="modal-tender-opening" class="text-primary">-</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <h6 class="fw-bold">Scope of Work & Technical Description</h6>
+            <p id="modal-tender-desc" class="text-muted small mb-0"></p>
+          </div>
+
+          <div class="mb-3">
+            <h6 class="fw-bold">Mandatory Eligibility Criteria</h6>
+            <div class="p-2.5 bg-light border rounded-3 small" id="modal-tender-eligibility"></div>
+          </div>
+
+          <div class="mb-3">
+            <h6 class="fw-bold">Official RFP / BoQ Specification Documents</h6>
+            <div id="modal-tender-docs-list"></div>
+          </div>
+
+          <div class="text-muted small">
+            Issued By: <span id="modal-tender-creator">-</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button id="modal-tender-bid-btn" type="button" class="btn btn-primary d-none">
+            <i class="bi bi-send me-1"></i> Apply & Submit Bid
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Create Tender Modal (Authority) -->
+  <div class="modal fade" id="createTenderModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="fw-bold mb-0">Create New Institutional Procurement Tender</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="create-tender-form" enctype="multipart/form-data">
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Tender Title</label>
+              <input type="text" name="title" id="new-tender-title" class="form-control" placeholder="e.g. Procurement of High-Performance Computing Cluster for AI Lab" required>
+            </div>
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold">Indenting Department</label>
+                <select name="department" id="new-tender-dept" class="form-select" required>
+                  <option value="Department of Computer Science & Engineering (CSE)">Computer Science & Engineering (CSE)</option>
+                  <option value="Department of Artificial Intelligence & Data Science (AI & DS)">Artificial Intelligence & Data Science (AI & DS)</option>
+                  <option value="Department of Mechanical Engineering & Robotics">Mechanical Engineering & Robotics</option>
+                  <option value="Department of Civil Engineering & Infrastructure">Civil Engineering & Infrastructure</option>
+                  <option value="Department of Electrical & Electronics Engineering (EEE)">Electrical & Electronics Engineering (EEE)</option>
+                  <option value="Department of Electronics & Telecommunication (ETC)">Electronics & Telecommunication (ETC)</option>
+                  <option value="Department of Plastic & Polymer Engineering">Plastic & Polymer Engineering</option>
+                  <option value="School of Architecture & Design">School of Architecture & Design (B.Arch / B.Des)</option>
+                  <option value="Department of Management Studies (MBA / MCA / BBA)">Management Studies (MBA / MCA / BBA)</option>
+                  <option value="Marathwada MedTech Innovation Lab & Research Centre">Marathwada MedTech Innovation Lab</option>
+                  <option value="Central Library & Knowledge Resource Centre">Central Library & Knowledge Resource Centre</option>
+                  <option value="Campus Estate, Hostels & Maintenance Division">Campus Estate & Infrastructure</option>
+                  <option value="Campus IT & 10G Network Infrastructure Division">Campus IT & Network Cell</option>
+                  <option value="Electrical Substations & Solar Energy Cell">Electrical & Solar Energy Cell</option>
+                  <option value="Central Purchase & Procurement Committee">Central Purchase Committee</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold">Estimated Budget (INR ₹)</label>
+                <input type="number" name="estimated_budget" id="new-tender-budget" class="form-control" placeholder="e.g. 4500000" min="1000" required>
+              </div>
+            </div>
+            <div class="row g-3 mb-3">
+              <div class="col-md-4">
+                <label class="form-label small fw-semibold">EMD Amount (INR ₹)</label>
+                <input type="number" name="emd_amount" id="new-tender-emd" class="form-control" placeholder="e.g. 90000" min="0">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small fw-semibold">Submission Deadline</label>
+                <input type="datetime-local" name="submission_deadline" id="new-tender-deadline" class="form-control" required>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small fw-semibold">Opening Date</label>
+                <input type="datetime-local" name="opening_date" id="new-tender-opening" class="form-control" required>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Eligibility Criteria & Compliance Rules</label>
+              <textarea name="eligibility_criteria" id="new-tender-eligibility" class="form-control" rows="2" placeholder="e.g. Authorized Tier-1 OEM Partner, 3 years turnover > 5Cr, GSTIN..."></textarea>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Detailed Scope & Bill of Quantities (BoQ) Description</label>
+              <textarea name="description" id="new-tender-desc" class="form-control" rows="3" placeholder="Provide complete specifications and delivery milestones..."></textarea>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-semibold"><i class="bi bi-paperclip text-primary me-1"></i> Upload Specifications / RFP / BoQ Document (Optional)</label>
+              <input type="file" name="document" id="new-tender-doc" class="form-control" accept=".pdf,.doc,.docx,.xls,.xlsx,.zip">
+              <small class="text-muted" style="font-size: 0.72rem;">Attach detailed technical drawings, item-wise BoQ spreadsheet, or terms PDF.</small>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Initial Status</label>
+              <select name="status" id="new-tender-status" class="form-select">
+                <option value="published">Publish Immediately (Open for Bidding)</option>
+                <option value="draft">Save as Draft</option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Create Procurement Tender</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Submit Bid Modal (Contractor) -->
+  <div class="modal fade" id="submitBidModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div>
+            <h5 class="fw-bold mb-0">Submit Sealed Quotation</h5>
+            <small class="text-muted"><span id="bid-form-tender-code" class="tender-code me-1"></span> <span id="bid-form-tender-title"></span></small>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="submit-bid-form" enctype="multipart/form-data">
+          <input type="hidden" name="tender_id" id="bid-form-tender-id">
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Commercial Bid Quotation (INR ₹)</label>
+              <div class="input-group">
+                <span class="input-group-text bg-light">₹</span>
+                <input type="number" name="bid_amount" class="form-control" placeholder="Enter total quotation amount inclusive of taxes" min="1" required>
+              </div>
+              <small class="text-muted" style="font-size: 0.75rem;">Your quote remains sealed and encrypted until the official bid opening date.</small>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Technical Proposal & Implementation Plan</label>
+              <textarea name="technical_proposal" class="form-control" rows="3" placeholder="Summarize technical specifications, warranty terms, and execution schedule..."></textarea>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Attach Technical Compliance & Solvency Documents (PDF/ZIP)</label>
+              <input type="file" name="documents" class="form-control" multiple>
+              <small class="text-muted" style="font-size: 0.72rem;">Upload GSTIN, PAN, OEM Authorization, and Audited Balance Sheets.</small>
+            </div>
+            <div class="mb-2">
+              <label class="form-label small fw-semibold">Special Remarks (Optional)</label>
+              <input type="text" name="remarks" class="form-control form-control-sm" placeholder="e.g. 3-Year 24/7 onsite SLA included">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-success">
+              <i class="bi bi-lock-fill me-1"></i> Submit Sealed Bid
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. Evaluation Comparative Desk Modal -->
+  <div class="modal fade" id="evaluationDeskModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div>
+            <span id="eval-desk-tender-code" class="tender-code me-2"></span>
+            <span id="eval-desk-status"></span>
+            <h5 id="eval-desk-tender-title" class="fw-bold mt-1 mb-0">Tender Title</h5>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="d-flex justify-content-between align-items-center mb-3 p-2.5 bg-light rounded-3">
+            <div>
+              <span class="text-muted small">Estimated College Budget:</span>
+              <strong id="eval-desk-budget" class="text-success ms-1 fs-6"></strong>
+            </div>
+            <div class="small text-muted">
+              <i class="bi bi-info-circle me-1 text-primary"></i> QCBS Formula: <strong>70% Technical + 30% Financial</strong> (L1 Base)
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table comparison-table align-middle">
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Contractor / Firm</th>
+                  <th>Quoted Price (INR)</th>
+                  <th>Exp</th>
+                  <th>Tech Score</th>
+                  <th>Fin Score</th>
+                  <th>Total QCBS</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="eval-desk-bids-table-body">
+                <!-- Populated by JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. Score Bid Modal (Evaluator) -->
+  <div class="modal fade" id="scoreBidModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="fw-bold mb-0">Record Technical Evaluation Score</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="score-bid-form">
+          <input type="hidden" id="score-form-bid-id">
+          <div class="modal-body">
+            <div class="p-2.5 bg-light rounded-3 mb-3 small">
+              <div>Contractor: <strong id="score-form-company">-</strong></div>
+              <div>Commercial Quote: <strong id="score-form-amount" class="text-success">-</strong></div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Technical Proposal Score (0 - 100)</label>
+              <input type="number" id="score-tech-input" class="form-control" min="0" max="100" step="0.5" placeholder="e.g. 92.5" required>
+              <small class="text-muted" style="font-size: 0.75rem;">Minimum qualifying technical score is 70/100.</small>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Committee Recommendation</label>
+              <select id="score-rec-input" class="form-select">
+                <option value="recommended">Recommended for Award</option>
+                <option value="acceptable">Acceptable & Qualified</option>
+                <option value="not_recommended">Disqualified / Non-Compliant</option>
+              </select>
+            </div>
+            <div class="mb-2">
+              <label class="form-label small fw-semibold">Evaluation Audit Comments</label>
+              <textarea id="score-comments-input" class="form-control" rows="2" placeholder="Detail compliance with equipment specs and OEM credentials..."></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save Evaluation</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. Upload Document Modal (Authority) -->
+  <div class="modal fade" id="uploadDocModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="fw-bold mb-0">Attach Specifications Document</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="upload-doc-form">
+          <input type="hidden" id="upload-doc-tender-id">
+          <div class="modal-body">
+            <div class="mb-2 small">Attaching to: <code id="upload-doc-tender-code"></code></div>
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Select RFP / Technical Drawings / BoQ (PDF)</label>
+              <input type="file" id="upload-doc-file" class="form-control" accept=".pdf,.doc,.docx,.xls,.xlsx,.zip" required>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Upload Document</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8. Forgot Password & Email OTP Reset Modal -->
+  <div class="modal fade" id="forgotPasswordModal" tabindex="-1" aria-labelledby="forgotPasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="fw-bold mb-0"><i class="bi bi-key-fill text-primary me-2"></i>Reset Password via Email Verification</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        
+        <!-- Step 1: Request Verification Code -->
+        <div id="forgot-step-1" class="modal-body">
+          <p class="text-muted small mb-3">Enter your registered email address to receive a 6-digit email verification code (OTP).</p>
+          <form id="forgot-password-request-form">
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Registered Email Address</label>
+              <div class="input-group">
+                <span class="input-group-text bg-light"><i class="bi bi-envelope text-muted"></i></span>
+                <input type="email" id="forgot-email" class="form-control" placeholder="name@mit.asia or vendor@domain.com" required>
+              </div>
+            </div>
+            <button type="submit" id="forgot-send-btn" class="btn btn-primary w-100 py-2 fw-semibold">
+              <i class="bi bi-send me-1"></i> Send Verification Code
+            </button>
+          </form>
+        </div>
+
+        <!-- Step 2: Verify OTP & Reset Password -->
+        <div id="forgot-step-2" class="modal-body d-none">
+          <div id="forgot-demo-otp-alert" class="alert alert-info py-2 px-3 small rounded-3 mb-3 d-none">
+            <i class="bi bi-info-circle-fill me-1"></i> <strong>Email Verification Code (OTP):</strong> <code id="forgot-demo-otp-code" class="fs-6 fw-bold text-primary"></code>
+          </div>
+          <p class="text-muted small mb-3">Enter the 6-digit verification code sent to <strong id="forgot-target-email-display" class="text-dark"></strong> and create your new password.</p>
+          
+          <form id="forgot-password-reset-form">
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">6-Digit Verification Code (OTP)</label>
+              <input type="text" id="reset-otp" class="form-control text-center fs-5 fw-bold font-monospace" placeholder="000000" maxlength="6" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">New Password</label>
+              <input type="password" id="reset-new-password" class="form-control" placeholder="Min 8 chars, 1 Upper, 1 Special" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Confirm New Password</label>
+              <input type="password" id="reset-confirm-password" class="form-control" placeholder="Re-enter new password" required>
+            </div>
+            <div class="text-muted mb-3" style="font-size: 0.72rem;">
+              <i class="bi bi-shield-check me-1 text-success"></i> Password must contain min 8 chars with uppercase, lowercase, digit & special character.
+            </div>
+            <button type="submit" id="reset-submit-btn" class="btn btn-success w-100 py-2 fw-semibold">
+              <i class="bi bi-check-circle me-1"></i> Update & Set New Password
+            </button>
+            <button type="button" class="btn btn-link w-100 text-decoration-none small mt-2 text-muted" onclick="backToForgotStep1()">
+              <i class="bi bi-arrow-left me-1"></i> Change Email Address
+            </button>
+          </form>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- 9. Provision Institutional Staff Modal (Admin Only) -->
+  <div class="modal fade" id="provisionStaffModal" tabindex="-1" aria-labelledby="provisionStaffModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="fw-bold mb-0"><i class="bi bi-person-plus-fill text-primary me-2"></i>Provision Institutional Staff Account</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="provision-staff-form">
+          <div class="modal-body">
+            <p class="text-muted small mb-3">Issue verified institutional procurement access credentials for MIT faculty, department heads, and evaluation committee members.</p>
+            
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Staff Full Name</label>
+              <input type="text" id="prov-name" class="form-control" placeholder="e.g. Dr. Sanjay Patil" required>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Official Institutional Email</label>
+              <input type="email" id="prov-email" class="form-control" placeholder="e.g. sanjay.patil@mit.asia" required>
+            </div>
+
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label class="form-label small fw-semibold">Institutional Role</label>
+                <select id="prov-role" class="form-select" required>
+                  <option value="authority">Tender Authority</option>
+                  <option value="evaluator">Evaluator / Committee</option>
+                </select>
+              </div>
+              <div class="col-6">
+                <label class="form-label small fw-semibold">Contact Phone</label>
+                <input type="text" id="prov-phone" class="form-control" placeholder="+91 9822000000">
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Department / Division</label>
+              <select id="prov-dept" class="form-select" required>
+                <option value="Department of Computer Science & Engineering (CSE)">Computer Science & Engineering (CSE)</option>
+                <option value="Department of Artificial Intelligence & Data Science (AI & DS)">Artificial Intelligence & Data Science (AI & DS)</option>
+                <option value="Department of Mechanical Engineering & Robotics">Mechanical Engineering & Robotics</option>
+                <option value="Department of Civil Engineering & Infrastructure">Civil Engineering & Infrastructure</option>
+                <option value="Department of Electrical & Electronics Engineering (EEE)">Electrical & Electronics Engineering (EEE)</option>
+                <option value="Department of Electronics & Telecommunication (ETC)">Electronics & Telecommunication (ETC)</option>
+                <option value="Central Library & Knowledge Resource Centre">Central Library & Knowledge Resource Centre</option>
+                <option value="Campus Estate, Hostels & Maintenance Division">Campus Estate & Infrastructure</option>
+                <option value="Central Purchase & Procurement Committee">Central Purchase Committee</option>
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Temporary Initial Password</label>
+              <input type="password" id="prov-password" class="form-control" placeholder="Min 8 chars, 1 Upper, 1 Special" required>
+              <div class="text-muted" style="font-size: 0.72rem;">
+                Must satisfy complexity rules (e.g. <code>MitStaff@2026</code>). User can update password via email reset.
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" id="prov-submit-btn" class="btn btn-primary fw-semibold">
+              <i class="bi bi-check2-circle me-1"></i> Provision & Activate Account
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 10. Set Password & Accept Invitation Modal -->
+  <div class="modal fade" id="setPasswordModal" tabindex="-1" aria-labelledby="setPasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="fw-bold mb-0"><i class="bi bi-key-fill text-primary me-2"></i>Configure Institutional Account Password</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="set-password-form">
+          <div class="modal-body">
+            <div class="alert alert-success bg-success bg-opacity-10 border-0 rounded-3 py-2 px-3 mb-3 d-flex align-items-center gap-2.5">
+              <i class="bi bi-patch-check-fill text-success fs-5"></i>
+              <div>
+                <div class="fw-bold text-dark" style="font-size: 0.85rem;">Official Invitation Acceptance</div>
+                <div class="text-muted" style="font-size: 0.72rem;">Enter your official invitation token to set your secure password and activate your portal workspace.</div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Official Institutional Email</label>
+              <input type="email" id="setpass-email" class="form-control" placeholder="e.g. rajesh@department.gov.in" required>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Invitation / Activation Token</label>
+              <input type="text" id="setpass-token" class="form-control font-monospace" placeholder="Paste 64-character activation token from email" required>
+            </div>
+
+            <div class="row g-2 mb-2">
+              <div class="col-6">
+                <label class="form-label small fw-semibold">Create Password</label>
+                <input type="password" id="setpass-password" class="form-control form-control-sm" placeholder="Min 8 chars, 1 Upper, 1 Special" required>
+              </div>
+              <div class="col-6">
+                <label class="form-label small fw-semibold">Confirm Password</label>
+                <input type="password" id="setpass-confirm-password" class="form-control form-control-sm" placeholder="Re-enter password" required>
+              </div>
+            </div>
+
+            <div class="text-muted mb-3" style="font-size: 0.72rem;">
+              <i class="bi bi-shield-check me-1 text-success"></i> Minimum 8 characters with at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character.
+            </div>
+
+            <button type="submit" id="setpass-submit-btn" class="btn btn-primary w-100 py-2 fw-semibold">
+              <i class="bi bi-check2-circle me-1"></i> Activate Account & Set Password
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 11. Staff Request Full Details Modal (Admin Review) -->
+  <div class="modal fade" id="staffRequestDetailsModal" tabindex="-1" aria-labelledby="staffRequestDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div>
+            <span id="staff-detail-role-badge" class="badge bg-warning text-dark me-2">AUTHORITY</span>
+            <span id="staff-detail-status-badge"></span>
+            <h5 id="staff-detail-name" class="fw-bold mt-2 mb-0">Staff Member Name</h5>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="p-3 bg-light rounded-3 mb-3 border">
+            <div class="row g-2 mb-2">
+              <div class="col-6">
+                <small class="text-muted d-block">Employee ID / Code:</small>
+                <strong id="staff-detail-empid" class="text-dark font-monospace">-</strong>
+              </div>
+              <div class="col-6">
+                <small class="text-muted d-block">Designation:</small>
+                <strong id="staff-detail-designation" class="text-dark">-</strong>
+              </div>
+            </div>
+            <div class="row g-2 mb-2">
+              <div class="col-6">
+                <small class="text-muted d-block">Official Email:</small>
+                <strong id="staff-detail-email" class="text-primary">-</strong>
+              </div>
+              <div class="col-6">
+                <small class="text-muted d-block">Contact Phone:</small>
+                <strong id="staff-detail-phone" class="text-dark">-</strong>
+              </div>
+            </div>
+            <div class="mb-2">
+              <small class="text-muted d-block">Department / Division:</small>
+              <strong id="staff-detail-dept" class="text-dark">-</strong>
+            </div>
+            <div>
+              <small class="text-muted d-block">Request Date:</small>
+              <span id="staff-detail-date" class="text-muted small">-</span>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <h6 class="fw-bold small text-muted text-uppercase mb-1">Official Purpose & Justification</h6>
+            <div id="staff-detail-justification" class="p-2.5 bg-white border rounded-3 small text-dark" style="min-height: 50px;">
+              -
+            </div>
+          </div>
+
+          <div id="staff-detail-invitation-section" class="p-3 bg-light border border-primary rounded-3 mb-3 d-none">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <strong class="text-primary small"><i class="bi bi-envelope-check me-1"></i> Active Password Setup Invitation</strong>
+              <span class="badge bg-primary">48h Token</span>
+            </div>
+            <div class="text-muted small mb-2" style="font-size: 0.72rem;">
+              <i class="bi bi-exclamation-triangle text-warning me-1"></i> If the recipient has not received the email, ask them to check their <strong>Spam / Junk</strong> folder, or copy the direct setup link below:
+            </div>
+            <div class="input-group input-group-sm mb-2">
+              <input type="text" id="staff-detail-invitation-link" class="form-control font-monospace" readonly>
+              <button class="btn btn-primary" type="button" onclick="copyStaffModalInvitationLink()">
+                <i class="bi bi-clipboard me-1"></i> Copy Link
+              </button>
+            </div>
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="text-muted" style="font-size: 0.7rem;">Token: <code id="staff-detail-invitation-token" class="text-dark"></code></span>
+              <button type="button" class="btn btn-outline-success btn-sm py-0 px-2" style="font-size: 0.75rem;" onclick="resendStaffInvitationFromModal()">
+                <i class="bi bi-arrow-repeat me-1"></i> Resend Email
+              </button>
+            </div>
+          </div>
+
+          <input type="hidden" id="staff-detail-user-id">
+        </div>
+        <div class="modal-footer d-flex justify-content-between">
+          <div class="d-flex gap-2">
+            <button type="button" id="staff-detail-reject-btn" class="btn btn-outline-danger btn-sm" onclick="rejectCurrentStaffRequest()">
+              <i class="bi bi-x-circle me-1"></i> Reject Request
+            </button>
+            <button type="button" id="staff-detail-delete-btn" class="btn btn-danger btn-sm d-none" onclick="deleteCurrentStaffRequest()">
+              <i class="bi bi-trash me-1"></i> Delete Request
+            </button>
+          </div>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+            <button type="button" id="staff-detail-approve-btn" class="btn btn-success btn-sm fw-semibold" onclick="approveCurrentStaffRequest()">
+              <i class="bi bi-check-circle me-1"></i> Approve & Send Invitation
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container-custom"></div>
+
+  <!-- Bootstrap 5.3 JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Application JS -->
+  <script src="/js/api.js"></script>
+  <script src="/js/chatbot.js"></script>
+  <script src="/js/app.js"></script>
+
+</body>
+</html>

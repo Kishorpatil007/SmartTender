@@ -1,0 +1,33 @@
+{
+  "name": "smart-tender-management-system",
+  "version": "1.0.0",
+  "description": "Smart Tender Management System Using Web Technologies",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "reset": "node database/seed.js",
+    "seed": "node database/seed.js",
+    "test": "node test.js"
+  },
+  "keywords": [
+    "tender-management",
+    "procurement",
+    "bidding",
+    "express",
+    "nodejs",
+    "postgresql"
+  ],
+  "author": "Smart Tender Team",
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "nodemailer": "^10.0.10",
+    "pdfkit": "^0.15.0",
+    "pg": "^8.23.1"
+  }
+}

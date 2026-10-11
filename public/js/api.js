@@ -1,0 +1,276 @@
+/**
+ * API Client & Network Helper for MIT Chhatrapati Sambhajinagar Smart Tender System
+ */
+
+const API_BASE = '/api';
+
+const API = {
+  // Token Management
+  getToken: () => localStorage.getItem('mit_tender_token'),
+  setToken: (token) => localStorage.setItem('mit_tender_token', token),
+  removeToken: () => localStorage.removeItem('mit_tender_token'),
+
+  // User Session
+  getUser: () => {
+    const userStr = localStorage.getItem('mit_tender_user');
+    return userStr ? JSON.parse(userStr) : null;
+  },
+  setUser: (user) => localStorage.setItem('mit_tender_user', JSON.stringify(user)),
+  removeUser: () => localStorage.removeItem('mit_tender_user'),
+
+  // Generic Request Helper
+  async request(endpoint, options = {}) {
+    const url = `${API_BASE}${endpoint}`;
+    const headers = options.headers || {};
+
+    const token = API.getToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    if (!(options.body instanceof FormData) && !headers['Content-Type']) {
+      headers['Content-Type'] = 'application/json';
+    }
+
+    const config = {
+      ...options,
+      headers
+    };
+
+    try {
+      const res = await fetch(url, config);
+      const data = await res.json();
+
+      if (!res.ok) {
+        if (res.status === 401 && !endpoint.includes('/auth/login')) {
+          API.removeToken();
+          API.removeUser();
+          window.location.reload();
+        }
+        throw new Error(data.message || `HTTP Error ${res.status}`);
+      }
+
+      return data;
+    } catch (err) {
+      console.error(`API Error on [${options.method || 'GET'} ${endpoint}]:`, err);
+      throw err;
+    }
+  },
+
+  // Auth Endpoints
+  auth: {
+    login: (email, password) => API.request('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password })
+    }),
+    register: (userData) => API.request('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(userData)
+    }),
+    requestStaffAccount: (staffData) => API.request('/auth/request-staff-account', {
+      method: 'POST',
+      body: JSON.stringify(staffData)
+    }),
+    verifyInvitation: (token, email) => API.request(`/auth/verify-invitation?token=${encodeURIComponent(token)}&email=${encodeURIComponent(email)}`),
+    setPassword: (data) => API.request('/auth/set-password', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    }),
+    forgotPassword: (email) => API.request('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email })
+    }),
+    resetPassword: (data) => API.request('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    }),
+    verifyEmail: (data) => API.request('/auth/verify-email', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    }),
+    getProfile: () => API.request('/auth/me'),
+    getAdminStatus: () => API.request('/auth/admin-status')
+  },
+
+  // Tender Endpoints
+  tenders: {
+    getAll: (params = '') => API.request(`/tenders${params}`),
+    getById: (id) => API.request(`/tenders/${id}`),
+    create: (data) => API.request('/tenders', {
+      method: 'POST',
+      body: data instanceof FormData ? data : JSON.stringify(data)
+    }),
+    update: (id, data) => API.request(`/tenders/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    }),
+    publish: (id) => API.request(`/tenders/${id}/publish`, { method: 'PUT' }),
+    closeBidding: (id) => API.request(`/tenders/${id}/close-bidding`, { method: 'PUT' }),
+    delete: (id) => API.request(`/tenders/${id}`, { method: 'DELETE' }),
+    uploadDoc: (tenderId, formData) => API.request(`/tenders/${tenderId}/documents`, {
+      method: 'POST',
+      body: formData
+    })
+  },
+
+  // Contractor Endpoints
+  contractor: {
+    getProfile: () => API.request('/contractor/profile'),
+    updateProfile: (data) => API.request('/contractor/profile', {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    }),
+    getMyBids: () => API.request('/contractor/my-bids'),
+    submitBid: (formData) => API.request('/contractor/bids', {
+      method: 'POST',
+      body: formData
+    }),
+    getBidDetail: (id) => API.request(`/contractor/bids/${id}`)
+  },
+
+  // Evaluation Endpoints
+  evaluation: {
+    getTenders: () => API.request('/evaluation/tenders'),
+    getTenderBids: (tenderId) => API.request(`/evaluation/tenders/${tenderId}/bids`),
+    scoreBid: (data) => API.request('/evaluation/score', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    }),
+    awardTender: (data) => API.request('/evaluation/award', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    })
+  },
+
+  // Admin Endpoints
+  admin: {
+    getStats: () => API.request('/admin/stats'),
+    getUsers: (params = '') => API.request(`/admin/users${params}`),
+    getStaffRequests: (params = '') => API.request(`/admin/staff-requests${params}`),
+    getUserDetails: (id) => API.request(`/admin/users/${id}/details`),
+    approveStaffRequest: (id) => API.request(`/admin/staff-requests/${id}/approve`, {
+      method: 'POST'
+    }),
+    rejectStaffRequest: (id, reason) => API.request(`/admin/staff-requests/${id}/reject`, {
+      method: 'POST',
+      body: JSON.stringify({ reason })
+    }),
+    createUser: (userData) => API.request('/admin/users', {
+      method: 'POST',
+      body: JSON.stringify(userData)
+    }),
+    updateUserStatus: (id, status) => API.request(`/admin/users/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status })
+    }),
+    verifyUser: (id, status) => API.request(`/admin/users/${id}/verify`, {
+      method: 'PUT',
+      body: JSON.stringify({ status })
+    }),
+    deleteUser: (id) => API.request(`/admin/users/${id}`, { method: 'DELETE' }),
+    getContractors: (params = '') => API.request(`/admin/contractors${params}`),
+    verifyContractor: (id, status) => API.request(`/admin/contractors/${id}/verify`, {
+      method: 'PUT',
+      body: JSON.stringify({ status })
+    }),
+    deleteStaffRequest: (id) => API.request(`/admin/staff-requests/${id}`, { method: 'DELETE' }),
+    deleteContractor: (id) => API.request(`/admin/contractors/${id}`, { method: 'DELETE' }),
+    getAuditLogs: () => API.request('/admin/audit-logs'),
+    getDepartments: () => API.request('/admin/departments')
+  },
+
+  // Reports & PDF Endpoints
+  reports: {
+    getSummary: () => API.request('/reports/summary'),
+    getTenderHistory: () => API.request('/reports/tender-history'),
+    getContractorPerformance: () => API.request('/reports/contractor-performance'),
+    getPdfUrl: (tenderId, type = 'comparative') => `/api/reports/tender/${tenderId}/pdf?type=${type}`
+  },
+
+  // AI Chatbot Endpoints
+  ai: {
+    chat: (message, history = []) => API.request('/ai/chat', {
+      method: 'POST',
+      body: JSON.stringify({ message, history })
+    }),
+    getSuggestions: () => API.request('/ai/suggestions')
+  }
+};
+
+// UI Helper Utilities
+const UI = {
+  formatCurrency: (amount) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0
+    }).format(amount || 0).replace('₹', '₹ ');
+  },
+
+  formatDate: (dateStr) => {
+    if (!dateStr) return '-';
+    return new Date(dateStr).toLocaleDateString('en-IN', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  },
+
+  formatDateTime: (dateStr) => {
+    if (!dateStr) return '-';
+    return new Date(dateStr).toLocaleDateString('en-IN', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  },
+
+  getStatusBadge: (status) => {
+    const statusMap = {
+      draft: { class: 'badge-draft', label: 'Draft' },
+      published: { class: 'badge-published', label: 'Published / Open' },
+      under_evaluation: { class: 'badge-under_evaluation', label: 'Under Evaluation' },
+      awarded: { class: 'badge-awarded', label: 'Awarded' },
+      closed: { class: 'badge-closed', label: 'Closed' },
+      cancelled: { class: 'badge-cancelled', label: 'Cancelled' },
+      submitted: { class: 'badge-published', label: 'Submitted' },
+      under_review: { class: 'badge-under_evaluation', label: 'Under Review' },
+      qualified: { class: 'badge-awarded', label: 'Tech Qualified' },
+      disqualified: { class: 'badge-cancelled', label: 'Disqualified' },
+      rejected: { class: 'badge-cancelled', label: 'Rejected' },
+      pending: { class: 'badge-under_evaluation', label: 'Pending Verification' },
+      approved: { class: 'badge-awarded', label: 'Verified & Approved' }
+    };
+
+    const config = statusMap[status] || { class: 'badge-draft', label: status };
+    return `<span class="badge-status ${config.class}">${config.label}</span>`;
+  },
+
+  showToast: (message, type = 'success') => {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    const toastId = 'toast-' + Date.now();
+    const bgClass = type === 'success' ? 'bg-success text-white' : type === 'error' ? 'bg-danger text-white' : 'bg-primary text-white';
+
+    const toastHTML = `
+      <div id="${toastId}" class="toast align-items-center ${bgClass} border-0 show mb-2" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+          <div class="toast-body d-flex align-items-center gap-2">
+            <i class="bi ${type === 'success' ? 'bi-check-circle-fill' : type === 'error' ? 'bi-exclamation-octagon-fill' : 'bi-info-circle-fill'}"></i>
+            <div>${message}</div>
+          </div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+      </div>
+    `;
+
+    container.insertAdjacentHTML('beforeend', toastHTML);
+    setTimeout(() => {
+      const toastEl = document.getElementById(toastId);
+      if (toastEl) toastEl.remove();
+    }, 4000);
+  }
+};

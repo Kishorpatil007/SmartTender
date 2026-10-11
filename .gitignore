@@ -1,0 +1,54 @@
+# Environment variables and secrets
+
+.env
+.env.*
+!.env.example
+
+# Node.js dependencies
+
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Database journals and backups
+
+database/*.db-journal
+database/*.db-wal
+database/*.db-shm
+*.db-journal
+
+# SQLite database files
+
+database/*.db
+
+# Uploads and temporary cache
+
+public/uploads/temp/
+public/uploads/*
+temp/
+tmp/
+*.zip
+
+# Unity generated files
+
+**/[Ll]ibrary/
+**/[Tt]emp/
+**/[Oo]bj/
+**/[Bb]uild/
+**/[Bb]uilds/
+**/[Ll]ogs/
+**/[Uu]ser[Ss]ettings/
+**/[Mm]emoryCaptures/
+
+# OS and IDE files
+
+.DS_Store
+Thumbs.db
+Desktop.ini
+.vscode/
+.idea/
+
+# Log files
+
+*.log
