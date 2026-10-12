@@ -17,6 +17,9 @@
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+  <!-- Razorpay Checkout -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
   <!-- Custom Styles -->
   <link rel="stylesheet" href="/css/style.css">
   <link rel="stylesheet" href="/css/chatbot.css">
@@ -491,6 +494,44 @@
             </table>
           </div>
         </div>
+
+        <!-- Contractor Tender Fee & EMD Payment Obligations & History -->
+        <div class="card border-0 shadow-sm rounded-4 p-4 mt-4">
+          <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+            <div>
+              <h5 class="fw-bold mb-0">
+                <i class="bi bi-wallet2 text-success me-2"></i>Tender Application Fees & EMD Security Deposit Records
+              </h5>
+              <small class="text-muted">Track verified payment obligations, download official college receipts, and audit transactions</small>
+            </div>
+            <div class="d-flex gap-2 align-items-center">
+              <span id="contractor-payments-mode-pill" class="badge-test-mode">TEST MODE</span>
+              <button class="btn btn-sm btn-outline-primary" onclick="loadContractorPaymentsHistory()">
+                <i class="bi bi-arrow-clockwise me-1"></i> Refresh History
+              </button>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>Receipt #</th>
+                  <th>Tender Notice</th>
+                  <th>Obligation Type</th>
+                  <th>Amount (INR)</th>
+                  <th>Mode</th>
+                  <th>Status</th>
+                  <th>Payment Date</th>
+                  <th>Official Receipt</th>
+                </tr>
+              </thead>
+              <tbody id="contractor-payments-table-body">
+                <!-- Populated by JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
       <!-- ======================================================== -->
@@ -639,6 +680,129 @@
                 <!-- Populated by JavaScript -->
               </tbody>
             </table>
+          </div>
+        </div>
+
+        <!-- Admin Tender Fee & EMD Payment Management Section -->
+        <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+          <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+            <div>
+              <h5 class="fw-bold mb-0">
+                <i class="bi bi-bank2 text-primary me-2"></i>Procurement Fees & EMD Security Deposit Management
+              </h5>
+              <small class="text-muted">Real-time financial verification, Tender Fee collections, EMD deposits held, and Razorpay auditing</small>
+            </div>
+            <div class="d-flex gap-2 align-items-center">
+              <span id="admin-payments-mode-pill" class="badge-test-mode">TEST MODE</span>
+              <button class="btn btn-sm btn-outline-primary" onclick="loadAdminPaymentManagement()">
+                <i class="bi bi-arrow-clockwise me-1"></i> Refresh
+              </button>
+            </div>
+          </div>
+
+          <!-- Financial KPI Metric Cards -->
+          <div class="row g-3 mb-4">
+            <div class="col-md-3">
+              <div class="p-3 bg-light rounded-3 border">
+                <small class="text-muted d-block">Total Transactions</small>
+                <div class="d-flex align-items-baseline gap-2">
+                  <h4 id="admin-payment-stat-total" class="fw-bold mb-0">0</h4>
+                  <small id="admin-payment-stat-paid-count" class="text-success fw-semibold">0 Paid</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="p-3 bg-light rounded-3 border">
+                <small class="text-muted d-block">Tender Fees Collected</small>
+                <h4 id="admin-payment-stat-fee-total" class="fw-bold mb-0 text-primary">₹ 0</h4>
+                <small id="admin-payment-stat-fee-count" class="text-muted">0 Payments</small>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="p-3 bg-light rounded-3 border">
+                <small class="text-muted d-block">EMD Deposits Held</small>
+                <h4 id="admin-payment-stat-emd-total" class="fw-bold mb-0 text-success">₹ 0</h4>
+                <small id="admin-payment-stat-emd-count" class="text-muted">0 Active Deposits</small>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="p-3 bg-light rounded-3 border">
+                <small class="text-muted d-block">Total Revenue / Volume</small>
+                <h4 id="admin-payment-stat-revenue-total" class="fw-bold mb-0 text-dark">₹ 0</h4>
+                <small id="admin-payment-stat-mode-desc" class="text-muted">Test Environment</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Filter Toolbar -->
+          <div class="p-3 bg-light rounded-3 mb-3 border">
+            <div class="row g-2 align-items-center">
+              <div class="col-md-3">
+                <div class="input-group input-group-sm">
+                  <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                  <input type="text" id="admin-payments-search" class="form-control" placeholder="Search Receipt / Tender / Vendor..." onkeyup="if(event.key==='Enter') applyAdminPaymentFilters()">
+                </div>
+              </div>
+              <div class="col-md-2">
+                <select id="admin-payments-filter-type" class="form-select form-select-sm" onchange="applyAdminPaymentFilters()">
+                  <option value="">All Types (Fee & EMD)</option>
+                  <option value="TENDER_FEE">Tender Application Fee</option>
+                  <option value="EMD">Earnest Money Deposit (EMD)</option>
+                </select>
+              </div>
+              <div class="col-md-2">
+                <select id="admin-payments-filter-status" class="form-select form-select-sm" onchange="applyAdminPaymentFilters()">
+                  <option value="">All Statuses</option>
+                  <option value="PAID">PAID / Confirmed</option>
+                  <option value="CREATED">CREATED / Pending</option>
+                  <option value="FAILED">FAILED</option>
+                  <option value="REFUNDED">REFUNDED</option>
+                </select>
+              </div>
+              <div class="col-md-2">
+                <select id="admin-payments-filter-mode" class="form-select form-select-sm" onchange="applyAdminPaymentFilters()">
+                  <option value="">All Modes (Test & Live)</option>
+                  <option value="test">Test Mode</option>
+                  <option value="live">Live Mode</option>
+                </select>
+              </div>
+              <div class="col-md-3 d-flex gap-2">
+                <button class="btn btn-sm btn-primary flex-fill" onclick="applyAdminPaymentFilters()">
+                  <i class="bi bi-funnel me-1"></i> Apply Filter
+                </button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="resetAdminPaymentFilters()">
+                  Reset
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Payments Table -->
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>Receipt #</th>
+                  <th>Contractor / Firm</th>
+                  <th>Tender Reference</th>
+                  <th>Type</th>
+                  <th>Amount</th>
+                  <th>Mode</th>
+                  <th>Status</th>
+                  <th>Transaction Reference</th>
+                  <th>Date & Time</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="admin-payments-table-body">
+                <!-- Populated by JavaScript -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <div id="admin-payments-pagination" class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
+            <!-- Populated by JavaScript -->
           </div>
         </div>
 
@@ -1078,6 +1242,61 @@
                 <small class="text-muted d-block">Bid Opening Date:</small>
                 <strong id="modal-tender-opening" class="text-primary">-</strong>
               </div>
+            </div>
+          </div>
+
+          <!-- Fee & EMD Payment Compliance Box -->
+          <div id="modal-payment-section" class="card border-0 bg-light p-3 rounded-3 mb-3 d-none">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h6 class="fw-bold mb-0 text-dark">
+                <i class="bi bi-credit-card-2-front-fill text-primary me-1.5"></i>Tender Obligations & Payment Verification
+              </h6>
+              <span id="modal-payment-mode-badge" class="badge-test-mode">TEST MODE</span>
+            </div>
+            <div class="row g-2">
+              <!-- Tender Application Fee Card -->
+              <div class="col-md-6">
+                <div class="bg-white p-2.5 rounded-3 border d-flex flex-column justify-content-between h-100">
+                  <div class="d-flex justify-content-between align-items-start mb-1">
+                    <div>
+                      <small class="text-muted d-block">Tender Application Fee:</small>
+                      <strong id="modal-tender-fee-amount" class="fs-6 text-dark">₹ 1,000</strong>
+                    </div>
+                    <span id="modal-tender-fee-badge" class="badge bg-secondary">Unpaid</span>
+                  </div>
+                  <div class="d-flex gap-2 mt-2" id="modal-tender-fee-actions">
+                    <button id="btn-pay-tender-fee" class="btn btn-sm btn-primary w-100" onclick="initiatePayment('TENDER_FEE')">
+                      <i class="bi bi-wallet2 me-1"></i> Pay Fee
+                    </button>
+                    <button id="btn-view-fee-receipt" class="btn btn-sm btn-outline-success w-100 d-none" onclick="viewReceiptFromTender('TENDER_FEE')">
+                      <i class="bi bi-receipt me-1"></i> View Receipt
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <!-- EMD Deposit Card -->
+              <div class="col-md-6">
+                <div class="bg-white p-2.5 rounded-3 border d-flex flex-column justify-content-between h-100">
+                  <div class="d-flex justify-content-between align-items-start mb-1">
+                    <div>
+                      <small class="text-muted d-block">Earnest Money Deposit (EMD):</small>
+                      <strong id="modal-tender-emd-amount" class="fs-6 text-dark">₹ 0</strong>
+                    </div>
+                    <span id="modal-tender-emd-badge" class="badge bg-secondary">Unpaid</span>
+                  </div>
+                  <div class="d-flex gap-2 mt-2" id="modal-tender-emd-actions">
+                    <button id="btn-pay-emd" class="btn btn-sm btn-primary w-100" onclick="initiatePayment('EMD')">
+                      <i class="bi bi-shield-check me-1"></i> Pay EMD
+                    </button>
+                    <button id="btn-view-emd-receipt" class="btn btn-sm btn-outline-success w-100 d-none" onclick="viewReceiptFromTender('EMD')">
+                      <i class="bi bi-receipt me-1"></i> View Receipt
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div id="modal-payment-compliance-alert" class="small text-muted mt-2 d-none">
+              <i class="bi bi-info-circle me-1 text-primary"></i> <span id="modal-payment-compliance-msg">Note: Bidding requires both Tender Application Fee and EMD to be verified.</span>
             </div>
           </div>
 
@@ -1631,6 +1850,153 @@
               <i class="bi bi-check-circle me-1"></i> Approve & Send Invitation
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 12. Payment Receipt Modal -->
+  <div class="modal fade" id="paymentReceiptModal" tabindex="-1" aria-labelledby="paymentReceiptModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header d-flex justify-content-between align-items-center">
+          <div>
+            <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-receipt text-primary me-2"></i>Official Payment Receipt</h5>
+            <small class="text-muted">Issued by Maharashtra Institute of Technology (MIT), Chhatrapati Sambhajinagar</small>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4">
+          <!-- Institutional Receipt Box -->
+          <div class="payment-receipt-box shadow-sm">
+            <!-- Header Banner -->
+            <div class="payment-receipt-header d-flex justify-content-between align-items-center">
+              <div>
+                <h6 class="fw-bold mb-1 tracking-wide" style="letter-spacing: 0.5px;">MAHARASHTRA INSTITUTE OF TECHNOLOGY (MIT)</h6>
+                <div class="small opacity-75">CHHATRAPATI SAMBHAJINAGAR, MAHARASHTRA - 431005</div>
+                <div class="small opacity-75">Central Purchase Committee | E-Tendering & Procurement Cell</div>
+              </div>
+              <div class="text-end">
+                <span class="badge bg-white text-primary fw-bold px-2.5 py-1.5 rounded-pill mb-1 d-inline-block">OFFICIAL RECEIPT</span>
+                <div id="receipt-modal-no" class="small fw-bold text-white font-monospace">MIT-RCP-2026-00000</div>
+              </div>
+            </div>
+
+            <!-- Mode Notice Banner -->
+            <div id="receipt-modal-banner" class="alert alert-warning py-2 px-3 mb-3 small rounded-3 fw-bold">
+              ⚠️ TEST TRANSACTION — NO REAL MONEY TRANSFERRED (DEMO / AUDIT SIMULATION)
+            </div>
+
+            <!-- Receipt Meta Details -->
+            <div class="p-3 bg-light rounded-3 border mb-3">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <small class="text-muted d-block">Contractor / Vendor Firm:</small>
+                  <strong id="receipt-modal-contractor" class="text-dark fs-6">-</strong>
+                  <div class="small text-muted">License: <code id="receipt-modal-license" class="text-dark">-</code> | GSTIN: <span id="receipt-modal-gstin">-</span></div>
+                </div>
+                <div class="col-md-6">
+                  <small class="text-muted d-block">Procurement Tender Reference:</small>
+                  <strong id="receipt-modal-tender-code" class="text-primary font-monospace">-</strong>
+                  <div id="receipt-modal-tender-title" class="small text-dark fw-semibold text-truncate">-</div>
+                  <div id="receipt-modal-department" class="small text-muted">-</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Particulars & Amount Table -->
+            <div class="table-responsive mb-3 border rounded-3 overflow-hidden">
+              <table class="table table-bordered mb-0">
+                <thead class="table-primary text-primary">
+                  <tr>
+                    <th>Obligation Particulars</th>
+                    <th class="text-end" style="width: 160px;">Amount (INR)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      <strong id="receipt-modal-type" class="text-dark">Tender Application Fee</strong>
+                      <div class="small text-muted">Statutory obligation for bidding eligibility in MIT college procurement tender.</div>
+                    </td>
+                    <td class="text-end align-middle">
+                      <strong id="receipt-modal-amount" class="fs-5 text-dark">₹ 0</strong>
+                    </td>
+                  </tr>
+                  <tr class="table-light">
+                    <td colspan="2" class="small">
+                      <strong>Amount in Words:</strong> <span id="receipt-modal-words" class="text-muted italic">-</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Verification & Provider Info -->
+            <div class="p-3 bg-light rounded-3 border small">
+              <div class="row g-2">
+                <div class="col-md-6">
+                  <div><strong>Payment Status:</strong> <span id="receipt-modal-status" class="badge bg-success ms-1">PAID / CONFIRMED</span></div>
+                  <div><strong>Payment Gateway:</strong> <span id="receipt-modal-provider">Razorpay</span> (<span id="receipt-modal-mode" class="text-uppercase fw-semibold">TEST</span>)</div>
+                  <div><strong>Verified Timestamp:</strong> <span id="receipt-modal-date">-</span></div>
+                </div>
+                <div class="col-md-6">
+                  <div><strong>Razorpay Order ID:</strong> <code id="receipt-modal-order-id" class="text-dark">-</code></div>
+                  <div><strong>Payment Transaction ID:</strong> <code id="receipt-modal-payment-id" class="text-dark">-</code></div>
+                  <div><strong>Signature Check:</strong> <span class="text-success fw-bold"><i class="bi bi-shield-check"></i> Cryptographic HMAC SHA256 Verified</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-3 text-center text-muted" style="font-size: 0.72rem;">
+              <i class="bi bi-lock-fill text-success me-1"></i> This is a computer-generated institutional receipt issued by Smart E-Tender Management System. Valid without physical signature.
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer d-flex justify-content-between">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-primary" onclick="window.print()">
+              <i class="bi bi-printer me-1"></i> Print Receipt
+            </button>
+            <button type="button" id="btn-download-pdf-receipt" class="btn btn-primary" onclick="downloadCurrentReceiptPdf()">
+              <i class="bi bi-file-earmark-pdf-fill me-1"></i> Download Official PDF
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 13. Payment Gateway Configuration Setup Notice Modal -->
+  <div class="modal fade" id="paymentGatewayNoticeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-gear-wide-connected text-warning me-2"></i>Razorpay Gateway Setup Required</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-info py-2 px-3 small rounded-3 mb-3">
+            <i class="bi bi-info-circle-fill me-1"></i> The payment module is fully prepared and waiting for Razorpay API keys in your server environment (<code>.env</code> file or Render Dashboard).
+          </div>
+          <p class="small text-muted mb-3">
+            To enable checkout transactions in Test Mode or Live Mode, configure the following environment variables in your server configuration:
+          </p>
+          <div class="bg-dark text-light p-3 rounded-3 font-monospace small mb-3">
+            <div class="text-warning"># Payment Gateway Configuration</div>
+            <div>PAYMENT_PROVIDER=razorpay</div>
+            <div>PAYMENT_MODE=test <span class="text-secondary"># or live</span></div>
+            <div>RAZORPAY_KEY_ID=rzp_test_...</div>
+            <div>RAZORPAY_KEY_SECRET=...</div>
+            <div>RAZORPAY_WEBHOOK_SECRET=...</div>
+          </div>
+          <p class="small text-muted mb-0">
+            Once keys are configured, Razorpay Checkout will automatically activate for all contractors.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Understood</button>
         </div>
       </div>
     </div>

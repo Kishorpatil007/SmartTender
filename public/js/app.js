@@ -330,6 +330,109 @@ window.viewTenderDetails = async function(tenderId) {
     document.getElementById('modal-tender-eligibility').textContent = t.eligibility_criteria || 'Statutory GSTIN, PAN, and OEM authorization required.';
     document.getElementById('modal-tender-creator').textContent = `${t.created_by_name || 'Purchase Office'} (${t.created_by_email || 'purchase@mit.asia'})`;
 
+    window.currentViewingTender = t;
+
+    // Payment Section Visibility & Data for Contractor
+    const paymentSec = document.getElementById('modal-payment-section');
+    if (paymentSec) {
+      if (currentUser && currentUser.role === 'contractor' && t.status === 'published') {
+        paymentSec.classList.remove('d-none');
+        try {
+          const payStatus = await API.payments.getTenderStatus(t.id);
+          const payConfig = await API.payments.getConfig();
+
+          const modeBadge = document.getElementById('modal-payment-mode-badge');
+          if (modeBadge && payConfig && payConfig.config) {
+            const isLive = payConfig.config.mode === 'live';
+            modeBadge.className = isLive ? 'badge-live-mode' : 'badge-test-mode';
+            modeBadge.textContent = isLive ? 'LIVE GATEWAY' : 'TEST MODE';
+          }
+
+          // Tender Fee
+          const feeAmountEl = document.getElementById('modal-tender-fee-amount');
+          const feeBadgeEl = document.getElementById('modal-tender-fee-badge');
+          const payFeeBtn = document.getElementById('btn-pay-tender-fee');
+          const viewFeeBtn = document.getElementById('btn-view-fee-receipt');
+
+          if (feeAmountEl) feeAmountEl.textContent = UI.formatCurrency(payStatus.tenderFee.amountRupees);
+          if (payStatus.tenderFee.paid) {
+            if (feeBadgeEl) {
+              feeBadgeEl.className = 'badge bg-success';
+              feeBadgeEl.innerHTML = '<i class="bi bi-check-circle me-1"></i>PAID';
+            }
+            if (payFeeBtn) payFeeBtn.classList.add('d-none');
+            if (viewFeeBtn) viewFeeBtn.classList.remove('d-none');
+          } else {
+            if (feeBadgeEl) {
+              feeBadgeEl.className = 'badge bg-warning text-dark';
+              feeBadgeEl.textContent = 'Unpaid';
+            }
+            if (payFeeBtn) {
+              payFeeBtn.classList.remove('d-none');
+              payFeeBtn.disabled = false;
+              payFeeBtn.innerHTML = '<i class="bi bi-wallet2 me-1"></i> Pay Fee';
+            }
+            if (viewFeeBtn) viewFeeBtn.classList.add('d-none');
+          }
+
+          // EMD Deposit
+          const emdAmountEl = document.getElementById('modal-tender-emd-amount');
+          const emdBadgeEl = document.getElementById('modal-tender-emd-badge');
+          const payEmdBtn = document.getElementById('btn-pay-emd');
+          const viewEmdBtn = document.getElementById('btn-view-emd-receipt');
+
+          if (emdAmountEl) emdAmountEl.textContent = UI.formatCurrency(payStatus.emd.amountRupees);
+          if (!payStatus.emd.required) {
+            if (emdBadgeEl) {
+              emdBadgeEl.className = 'badge bg-light text-dark border';
+              emdBadgeEl.textContent = 'Exempt (₹0)';
+            }
+            if (payEmdBtn) {
+              payEmdBtn.classList.remove('d-none');
+              payEmdBtn.disabled = true;
+              payEmdBtn.textContent = 'No EMD Required';
+            }
+            if (viewEmdBtn) viewEmdBtn.classList.add('d-none');
+          } else if (payStatus.emd.paid) {
+            if (emdBadgeEl) {
+              emdBadgeEl.className = 'badge bg-success';
+              emdBadgeEl.innerHTML = '<i class="bi bi-check-circle me-1"></i>PAID';
+            }
+            if (payEmdBtn) payEmdBtn.classList.add('d-none');
+            if (viewEmdBtn) viewEmdBtn.classList.remove('d-none');
+          } else {
+            if (emdBadgeEl) {
+              emdBadgeEl.className = 'badge bg-warning text-dark';
+              emdBadgeEl.textContent = 'Unpaid';
+            }
+            if (payEmdBtn) {
+              payEmdBtn.classList.remove('d-none');
+              payEmdBtn.disabled = false;
+              payEmdBtn.innerHTML = '<i class="bi bi-shield-check me-1"></i> Pay EMD';
+            }
+            if (viewEmdBtn) viewEmdBtn.classList.add('d-none');
+          }
+
+          const complianceAlert = document.getElementById('modal-payment-compliance-alert');
+          if (complianceAlert) {
+            complianceAlert.classList.remove('d-none');
+            const compMsg = document.getElementById('modal-payment-compliance-msg');
+            if (compMsg) {
+              if (payStatus.allPaid) {
+                compMsg.innerHTML = '<strong class="text-success"><i class="bi bi-check-circle-fill me-1"></i> Payment obligations verified! You are fully eligible to submit your sealed bid quotation.</strong>';
+              } else {
+                compMsg.textContent = 'Note: Both Tender Application Fee and EMD (if required) must be paid before submitting your sealed quotation.';
+              }
+            }
+          }
+        } catch (payErr) {
+          console.warn('Could not load tender payment status:', payErr);
+        }
+      } else {
+        paymentSec.classList.add('d-none');
+      }
+    }
+
     // Attached Documents List
     const docsContainer = document.getElementById('modal-tender-docs-list');
     if (docsContainer) {
@@ -499,6 +602,9 @@ async function loadContractorView() {
         `).join('');
       }
     }
+
+    // 3. Load Payment Obligations & History
+    await loadContractorPaymentsHistory();
   } catch (err) {
     console.error('Error loading contractor view:', err);
   }
@@ -854,6 +960,9 @@ async function loadAdminView() {
         `).join('');
       }
     }
+
+    // 4. Procurement Fee & EMD Payment Management
+    await loadAdminPaymentManagement();
   } catch (err) {
     console.error('Error loading admin view:', err);
     UI.showToast('Error loading admin dashboard: ' + err.message, 'error');
@@ -1829,3 +1938,465 @@ window.logout = function() {
   UI.showToast('You have been signed out successfully.', 'info');
   navigateTo('landing');
 };
+
+// ========================================================================
+// PAYMENT MODULE CONTROLLER (TENDER FEES & EMD SECURITY DEPOSITS)
+// ========================================================================
+
+window.currentViewingPayment = null;
+window.currentAdminPaymentPage = 1;
+
+/**
+ * Initiates Razorpay Checkout payment for Tender Application Fee or EMD
+ */
+window.initiatePayment = async function(paymentType) {
+  if (!currentUser || currentUser.role !== 'contractor') {
+    UI.showToast('Please sign in with your verified contractor account to pay fees.', 'error');
+    return;
+  }
+
+  const tender = window.currentViewingTender;
+  if (!tender) {
+    UI.showToast('No tender selected.', 'error');
+    return;
+  }
+
+  const payBtn = paymentType === 'TENDER_FEE' 
+    ? document.getElementById('btn-pay-tender-fee') 
+    : document.getElementById('btn-pay-emd');
+  const originalBtnHtml = payBtn ? payBtn.innerHTML : '';
+
+  if (payBtn) {
+    payBtn.disabled = true;
+    payBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Preparing...';
+  }
+
+  try {
+    // 1. Check Gateway Configuration
+    const configRes = await API.payments.getConfig();
+    const config = configRes.config;
+
+    if (!config.isConfigured) {
+      // Missing credentials in server environment - show setup modal
+      const noticeModal = new bootstrap.Modal(document.getElementById('paymentGatewayNoticeModal'));
+      noticeModal.show();
+      if (payBtn) {
+        payBtn.disabled = false;
+        payBtn.innerHTML = originalBtnHtml;
+      }
+      return;
+    }
+
+    // 2. Create Order on Backend (server-calculated amount)
+    const order = await API.payments.createOrder(tender.id, paymentType);
+
+    // 3. Launch Official Razorpay Checkout Modal
+    const options = {
+      key: order.keyId,
+      amount: order.amount,
+      currency: order.currency,
+      name: 'MIT Chhatrapati Sambhajinagar',
+      description: order.description,
+      order_id: order.orderId,
+      prefill: {
+        name: currentUser.name,
+        email: currentUser.email,
+        contact: currentUser.phone || ''
+      },
+      notes: {
+        tenderCode: order.tenderCode,
+        paymentType: order.paymentType,
+        receiptNo: order.receiptNo
+      },
+      theme: {
+        color: '#1a56db'
+      },
+      modal: {
+        ondismiss: function() {
+          UI.showToast('Payment window closed. No funds were debited.', 'info');
+          if (payBtn) {
+            payBtn.disabled = false;
+            payBtn.innerHTML = originalBtnHtml;
+          }
+        }
+      },
+      handler: async function(response) {
+        try {
+          UI.showToast('Verifying payment signature with MIT server...', 'info');
+          const verifyResult = await API.payments.verify({
+            provider_order_id: response.razorpay_order_id,
+            provider_payment_id: response.razorpay_payment_id,
+            provider_signature: response.razorpay_signature,
+            payment_id: order.paymentId
+          });
+
+          if (verifyResult.success) {
+            UI.showToast(`Payment verified successfully! Official Receipt: ${verifyResult.payment.receipt_no}`, 'success');
+            await viewTenderDetails(tender.id);
+            if (currentView === 'contractor') {
+              loadContractorPaymentsHistory();
+            }
+            openPaymentReceiptModal(verifyResult.payment);
+          }
+        } catch (verr) {
+          UI.showToast('Payment verification failed: ' + verr.message, 'error');
+        } finally {
+          if (payBtn) {
+            payBtn.disabled = false;
+            payBtn.innerHTML = originalBtnHtml;
+          }
+        }
+      }
+    };
+
+    if (typeof Razorpay === 'undefined') {
+      throw new Error('Razorpay Checkout SDK is not loaded. Please verify your internet connection.');
+    }
+
+    const rzp = new Razorpay(options);
+    rzp.on('payment.failed', function(response) {
+      UI.showToast(`Payment failed: ${response.error.description}`, 'error');
+      if (payBtn) {
+        payBtn.disabled = false;
+        payBtn.innerHTML = originalBtnHtml;
+      }
+    });
+
+    rzp.open();
+  } catch (err) {
+    if (err.alreadyPaid) {
+      UI.showToast(err.message, 'info');
+      await viewTenderDetails(tender.id);
+    } else {
+      UI.showToast('Payment Error: ' + err.message, 'error');
+    }
+    if (payBtn) {
+      payBtn.disabled = false;
+      payBtn.innerHTML = originalBtnHtml;
+    }
+  }
+};
+
+/**
+ * Loads receipt for a specific obligation from Tender Details modal
+ */
+window.viewReceiptFromTender = async function(paymentType) {
+  const tender = window.currentViewingTender;
+  if (!tender) return;
+
+  try {
+    const payStatus = await API.payments.getTenderStatus(tender.id);
+    const payment = paymentType === 'TENDER_FEE' ? payStatus.tenderFee.payment : payStatus.emd.payment;
+    if (payment) {
+      openPaymentReceiptModal(payment);
+    } else {
+      UI.showToast('No receipt record found for this obligation.', 'info');
+    }
+  } catch (err) {
+    UI.showToast('Error retrieving receipt: ' + err.message, 'error');
+  }
+};
+
+/**
+ * Displays the Institutional Payment Receipt Modal
+ */
+window.openPaymentReceiptModal = function(payment) {
+  window.currentViewingPayment = payment;
+
+  document.getElementById('receipt-modal-no').textContent = payment.receipt_no;
+  document.getElementById('receipt-modal-contractor').textContent = payment.company_name || currentUser.name;
+  document.getElementById('receipt-modal-license').textContent = payment.license_number || 'N/A';
+  document.getElementById('receipt-modal-gstin').textContent = payment.gst_number || 'Registered Vendor';
+
+  document.getElementById('receipt-modal-tender-code').textContent = payment.tender_code || '-';
+  document.getElementById('receipt-modal-tender-title').textContent = payment.tender_title || '-';
+  document.getElementById('receipt-modal-department').textContent = payment.department || 'Central Purchase Committee';
+
+  const typeName = payment.payment_type === 'TENDER_FEE' 
+    ? 'Tender Application & Tender Document Fee' 
+    : 'Earnest Money Deposit (EMD)';
+  document.getElementById('receipt-modal-type').textContent = typeName;
+  document.getElementById('receipt-modal-amount').textContent = UI.formatCurrency(payment.amount_rupees);
+  document.getElementById('receipt-modal-words').textContent = payment.amount_rupees ? `${UI.formatCurrency(payment.amount_rupees)} (Verified)` : '-';
+
+  document.getElementById('receipt-modal-status').textContent = payment.payment_status;
+  document.getElementById('receipt-modal-status').className = `badge ${payment.payment_status === 'PAID' ? 'bg-success' : 'bg-warning text-dark'} ms-1`;
+  document.getElementById('receipt-modal-provider').textContent = (payment.payment_provider || 'Razorpay').toUpperCase();
+  document.getElementById('receipt-modal-mode').textContent = (payment.payment_mode || 'TEST').toUpperCase();
+  document.getElementById('receipt-modal-date').textContent = UI.formatDateTime(payment.paid_at || payment.created_at);
+
+  document.getElementById('receipt-modal-order-id').textContent = payment.provider_order_id || 'N/A';
+  document.getElementById('receipt-modal-payment-id').textContent = payment.provider_payment_id || 'N/A';
+
+  const banner = document.getElementById('receipt-modal-banner');
+  if (banner) {
+    if (payment.payment_mode === 'live') {
+      banner.className = 'alert alert-success py-2 px-3 mb-3 small rounded-3 fw-bold';
+      banner.textContent = '✅ VERIFIED INSTITUTIONAL REVENUE TRANSACTION — FUNDS CAPTURED & AUDITED';
+    } else {
+      banner.className = 'alert alert-warning py-2 px-3 mb-3 small rounded-3 fw-bold';
+      banner.textContent = '⚠️ TEST TRANSACTION — NO REAL MONEY TRANSFERRED (DEMO / AUDIT SIMULATION)';
+    }
+  }
+
+  const modal = new bootstrap.Modal(document.getElementById('paymentReceiptModal'));
+  modal.show();
+};
+
+/**
+ * Downloads current official receipt PDF via browser tab
+ */
+window.downloadCurrentReceiptPdf = function() {
+  if (!window.currentViewingPayment || !window.currentViewingPayment.id) {
+    UI.showToast('No receipt selected.', 'error');
+    return;
+  }
+  const url = API.payments.getPdfUrl(window.currentViewingPayment.id);
+  window.open(url, '_blank');
+};
+
+/**
+ * Loads contractor payment transactions table in Contractor Portal
+ */
+window.loadContractorPaymentsHistory = async function() {
+  try {
+    const tableBody = document.getElementById('contractor-payments-table-body');
+    if (!tableBody) return;
+
+    const res = await API.payments.getHistory();
+    const payments = res.payments || [];
+
+    const modePill = document.getElementById('contractor-payments-mode-pill');
+    if (modePill && payments.length > 0) {
+      const mode = payments[0].payment_mode;
+      modePill.className = mode === 'live' ? 'badge-live-mode' : 'badge-test-mode';
+      modePill.textContent = mode.toUpperCase() + ' MODE';
+    }
+
+    if (payments.length === 0) {
+      tableBody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">No payment transactions recorded yet. Browse open tenders to pay tender fees or EMD.</td></tr>';
+      return;
+    }
+
+    tableBody.innerHTML = payments.map(p => `
+      <tr>
+        <td><strong class="font-monospace text-primary">${p.receipt_no}</strong></td>
+        <td>
+          <strong>${p.tender_code}</strong>
+          <div class="small text-muted text-truncate" style="max-width: 220px;">${p.tender_title}</div>
+        </td>
+        <td>
+          <span class="badge ${p.payment_type === 'TENDER_FEE' ? 'bg-primary' : 'bg-info text-dark'}">
+            ${p.payment_type === 'TENDER_FEE' ? 'Tender Fee' : 'EMD Deposit'}
+          </span>
+        </td>
+        <td class="fw-bold text-dark">${UI.formatCurrency(p.amount_rupees)}</td>
+        <td>
+          <span class="${p.payment_mode === 'live' ? 'badge-live-mode' : 'badge-test-mode'}">
+            ${p.payment_mode.toUpperCase()}
+          </span>
+        </td>
+        <td>${UI.getStatusBadge(p.payment_status)}</td>
+        <td class="small text-muted">${UI.formatDateTime(p.paid_at || p.created_at)}</td>
+        <td>
+          <div class="btn-group btn-group-sm">
+            <button class="btn btn-outline-primary" onclick="viewPaymentDetailsById(${p.id})">
+              <i class="bi bi-eye"></i> Receipt
+            </button>
+            ${p.payment_status === 'PAID' ? `
+              <a href="${API.payments.getPdfUrl(p.id)}" target="_blank" class="btn btn-outline-danger" title="Download Official PDF Receipt">
+                <i class="bi bi-file-earmark-pdf"></i> PDF
+              </a>
+            ` : ''}
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  } catch (err) {
+    console.error('Error loading contractor payments:', err);
+  }
+};
+
+/**
+ * Loads payment details by ID and opens receipt modal
+ */
+window.viewPaymentDetailsById = async function(paymentId) {
+  try {
+    const res = await API.payments.getById(paymentId);
+    if (res.success && res.payment) {
+      openPaymentReceiptModal(res.payment);
+    }
+  } catch (err) {
+    UI.showToast('Could not load payment receipt: ' + err.message, 'error');
+  }
+};
+
+/**
+ * Admin: Loads payment metrics and filtered transactions list
+ */
+window.loadAdminPaymentManagement = async function() {
+  try {
+    // 1. Load Stats
+    const statsRes = await API.payments.admin.getStats();
+    const stats = statsRes.stats;
+
+    const elTotal = document.getElementById('admin-payment-stat-total');
+    const elPaidCount = document.getElementById('admin-payment-stat-paid-count');
+    const elFeeTotal = document.getElementById('admin-payment-stat-fee-total');
+    const elFeeCount = document.getElementById('admin-payment-stat-fee-count');
+    const elEmdTotal = document.getElementById('admin-payment-stat-emd-total');
+    const elEmdCount = document.getElementById('admin-payment-stat-emd-count');
+    const elRevTotal = document.getElementById('admin-payment-stat-revenue-total');
+
+    if (elTotal) elTotal.textContent = stats.totalPayments;
+    if (elPaidCount) elPaidCount.textContent = `${stats.paidCount} Paid (${stats.failedCount} Failed)`;
+    if (elFeeTotal) elFeeTotal.textContent = UI.formatCurrency(stats.tenderFeesCollectedRupees);
+    if (elFeeCount) elFeeCount.textContent = `${stats.tenderFeesCount} Tender Fees Paid`;
+    if (elEmdTotal) elEmdTotal.textContent = UI.formatCurrency(stats.emdHeldRupees);
+    if (elEmdCount) elEmdCount.textContent = `${stats.emdCount} EMD Deposits Held`;
+    if (elRevTotal) elRevTotal.textContent = UI.formatCurrency(stats.totalCollectedRupees);
+
+    const modeSummary = document.getElementById('admin-payment-stat-mode-desc');
+    const modePill = document.getElementById('admin-payments-mode-pill');
+    if (modeSummary && stats.modeBreakdown) {
+      modeSummary.textContent = `${stats.modeBreakdown.currentMode.toUpperCase()} Mode: ₹${stats.modeBreakdown.testVolumeRupees.toLocaleString('en-IN')} Test / ₹${stats.modeBreakdown.liveRevenueRupees.toLocaleString('en-IN')} Live`;
+    }
+    if (modePill && stats.modeBreakdown) {
+      modePill.className = stats.modeBreakdown.currentMode === 'live' ? 'badge-live-mode' : 'badge-test-mode';
+      modePill.textContent = stats.modeBreakdown.currentMode.toUpperCase() + ' MODE';
+    }
+
+    // 2. Load Filtered List
+    await fetchAdminPaymentsList();
+  } catch (err) {
+    console.error('Error loading admin payment management:', err);
+  }
+};
+
+/**
+ * Admin: Fetches filtered list of payments with pagination
+ */
+window.fetchAdminPaymentsList = async function() {
+  try {
+    const tableBody = document.getElementById('admin-payments-table-body');
+    if (!tableBody) return;
+
+    const search = (document.getElementById('admin-payments-search')?.value || '').trim();
+    const type = document.getElementById('admin-payments-filter-type')?.value || '';
+    const status = document.getElementById('admin-payments-filter-status')?.value || '';
+    const mode = document.getElementById('admin-payments-filter-mode')?.value || '';
+
+    let query = `?page=${window.currentAdminPaymentPage || 1}&limit=15`;
+    if (search) query += `&search=${encodeURIComponent(search)}`;
+    if (type) query += `&paymentType=${encodeURIComponent(type)}`;
+    if (status) query += `&status=${encodeURIComponent(status)}`;
+    if (mode) query += `&mode=${encodeURIComponent(mode)}`;
+
+    const res = await API.payments.admin.getPayments(query);
+    const payments = res.payments || [];
+
+    if (payments.length === 0) {
+      tableBody.innerHTML = '<tr><td colspan="10" class="text-center text-muted py-4">No payment records matching the selected filters.</td></tr>';
+      return;
+    }
+
+    tableBody.innerHTML = payments.map(p => `
+      <tr>
+        <td><strong class="font-monospace text-primary">${p.receipt_no}</strong></td>
+        <td>
+          <strong>${p.company_name}</strong>
+          <div class="small text-muted">${p.license_number || ''}</div>
+        </td>
+        <td>
+          <code>${p.tender_code}</code>
+          <div class="small text-muted text-truncate" style="max-width: 180px;">${p.tender_title}</div>
+        </td>
+        <td>
+          <span class="badge ${p.payment_type === 'TENDER_FEE' ? 'bg-primary' : 'bg-info text-dark'}">
+            ${p.payment_type === 'TENDER_FEE' ? 'Fee' : 'EMD'}
+          </span>
+        </td>
+        <td class="fw-bold">${UI.formatCurrency(p.amount_rupees)}</td>
+        <td>
+          <span class="${p.payment_mode === 'live' ? 'badge-live-mode' : 'badge-test-mode'}">
+            ${p.payment_mode.toUpperCase()}
+          </span>
+        </td>
+        <td>${UI.getStatusBadge(p.payment_status)}</td>
+        <td class="small font-monospace text-muted">${p.provider_payment_id || p.provider_order_id || '-'}</td>
+        <td class="small text-muted">${UI.formatDateTime(p.paid_at || p.created_at)}</td>
+        <td>
+          <div class="btn-group btn-group-sm">
+            <button class="btn btn-outline-primary" onclick="viewPaymentDetailsById(${p.id})">
+              <i class="bi bi-eye"></i>
+            </button>
+            ${p.payment_status === 'PAID' ? `
+              <a href="${API.payments.getPdfUrl(p.id)}" target="_blank" class="btn btn-outline-danger" title="Official PDF Receipt">
+                <i class="bi bi-file-earmark-pdf"></i>
+              </a>
+              <button class="btn btn-outline-warning text-dark" title="Initiate Authorized Refund" onclick="adminInitiateRefund(${p.id}, '${p.receipt_no}', ${p.amount_rupees})">
+                <i class="bi bi-arrow-return-left"></i>
+              </button>
+            ` : ''}
+          </div>
+        </td>
+      </tr>
+    `).join('');
+
+    // Pagination
+    const paginationEl = document.getElementById('admin-payments-pagination');
+    if (paginationEl && res.pagination) {
+      paginationEl.innerHTML = `
+        <div class="small text-muted">Showing page ${res.pagination.currentPage} of ${res.pagination.totalPages || 1} (${res.pagination.totalRecords} total records)</div>
+        <div class="btn-group btn-group-sm">
+          <button class="btn btn-outline-secondary" ${res.pagination.currentPage <= 1 ? 'disabled' : ''} onclick="changeAdminPaymentPage(${res.pagination.currentPage - 1})">Previous</button>
+          <button class="btn btn-outline-secondary" ${res.pagination.currentPage >= res.pagination.totalPages ? 'disabled' : ''} onclick="changeAdminPaymentPage(${res.pagination.currentPage + 1})">Next</button>
+        </div>
+      `;
+    }
+  } catch (err) {
+    console.error('Error fetching admin payments list:', err);
+  }
+};
+
+window.applyAdminPaymentFilters = function() {
+  window.currentAdminPaymentPage = 1;
+  fetchAdminPaymentsList();
+};
+
+window.resetAdminPaymentFilters = function() {
+  const elSearch = document.getElementById('admin-payments-search');
+  const elType = document.getElementById('admin-payments-filter-type');
+  const elStatus = document.getElementById('admin-payments-filter-status');
+  const elMode = document.getElementById('admin-payments-filter-mode');
+
+  if (elSearch) elSearch.value = '';
+  if (elType) elType.value = '';
+  if (elStatus) elStatus.value = '';
+  if (elMode) elMode.value = '';
+
+  window.currentAdminPaymentPage = 1;
+  fetchAdminPaymentsList();
+};
+
+window.changeAdminPaymentPage = function(page) {
+  window.currentAdminPaymentPage = page;
+  fetchAdminPaymentsList();
+};
+
+window.adminInitiateRefund = async function(paymentId, receiptNo, amount) {
+  const reason = prompt(
+    `Authorized Refund Initiation\n\nConfirm refund for payment ${receiptNo} amounting to ${UI.formatCurrency(amount)}?\n\nEnter administrative reason for refund:`,
+    'Official refund authorized by MIT Central Procurement Committee'
+  );
+  if (!reason) return;
+
+  try {
+    const res = await API.payments.admin.refund(paymentId, reason);
+    UI.showToast(res.message, 'success');
+    loadAdminPaymentManagement();
+  } catch (err) {
+    UI.showToast('Refund failed: ' + err.message, 'error');
+  }
+};
+

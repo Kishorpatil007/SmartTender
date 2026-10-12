@@ -65,8 +65,21 @@ const requireRole = (...allowedRoles) => {
   };
 };
 
+// Security Audit Logger Helper
+const logAudit = async (userId, action, details, ip) => {
+  try {
+    await dbHelper.run(
+      'INSERT INTO audit_logs (user_id, action, details, ip_address) VALUES (?, ?, ?, ?)',
+      [userId || null, action, details, ip || '127.0.0.1']
+    );
+  } catch (err) {
+    console.error('Audit log write failed:', err);
+  }
+};
+
 module.exports = {
   verifyToken,
   requireRole,
+  logAudit,
   JWT_SECRET
 };

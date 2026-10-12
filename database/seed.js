@@ -13,7 +13,7 @@ const seedAccounts = async () => {
     await initSchema();
     console.log('Initializing MIT Chhatrapati Sambhajinagar Smart Tender database...');
 
-    await dbHelper.run(`TRUNCATE TABLE password_resets, audit_logs, evaluations, bid_documents, bids, tender_documents, tenders, contractors, users RESTART IDENTITY CASCADE;`);
+    await dbHelper.run(`TRUNCATE TABLE payment_webhook_events, payments, password_resets, audit_logs, evaluations, bid_documents, bids, tender_documents, tenders, contractors, users RESTART IDENTITY CASCADE;`);
 
     const adminPassword = bcrypt.hashSync('Admin@123', 10);
     await dbHelper.run(

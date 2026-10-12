@@ -256,3 +256,67 @@ body {
   right: 24px;
   z-index: 1090;
 }
+
+/* Payment Module Specific Styles */
+.badge-test-mode {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.badge-live-mode {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.payment-receipt-box {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 24px;
+  font-family: 'Inter', sans-serif;
+}
+
+.payment-receipt-header {
+  background: linear-gradient(135deg, #0a2540 0%, #1e3a8a 100%);
+  color: #ffffff;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.payment-status-badge-lg {
+  font-size: 0.9rem;
+  padding: 6px 14px;
+  border-radius: 30px;
+  font-weight: 600;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #paymentReceiptModal, #paymentReceiptModal * {
+    visibility: visible;
+  }
+  #paymentReceiptModal {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+  .modal-footer, .btn-close {
+    display: none !important;
+  }
+}

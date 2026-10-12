@@ -16,13 +16,19 @@ const contractorRoutes = require('./routes/contractorRoutes');
 const evaluationRoutes = require('./routes/evaluationRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const aiRoutes = require('./routes/aiRoutes');
+const { paymentRouter, adminPaymentRouter } = require('./routes/paymentRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Security & Parsing Middleware
 app.use(cors());
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({
+  limit: '10mb',
+  verify: (req, res, buf) => {
+    req.rawBody = buf;
+  }
+}));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Serve static assets from public directory
@@ -37,6 +43,8 @@ app.use('/api/contractor', contractorRoutes);
 app.use('/api/evaluation', evaluationRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/payments', paymentRouter);
+app.use('/api/admin/payments', adminPaymentRouter);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

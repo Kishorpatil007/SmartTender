@@ -194,6 +194,31 @@ const API = {
       body: JSON.stringify({ message, history })
     }),
     getSuggestions: () => API.request('/ai/suggestions')
+  },
+
+  // Payments Endpoints (Tender Fee & EMD)
+  payments: {
+    getConfig: () => API.request('/payments/config'),
+    createOrder: (tenderId, paymentType) => API.request('/payments/create-order', {
+      method: 'POST',
+      body: JSON.stringify({ tender_id: tenderId, payment_type: paymentType })
+    }),
+    verify: (data) => API.request('/payments/verify', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    }),
+    getHistory: (tenderId) => API.request(`/payments/history${tenderId ? `?tenderId=${tenderId}` : ''}`),
+    getTenderStatus: (tenderId) => API.request(`/payments/tender/${tenderId}/status`),
+    getById: (id) => API.request(`/payments/${id}`),
+    getPdfUrl: (id) => `/api/payments/${id}/receipt-pdf?token=${API.getToken()}`,
+    admin: {
+      getPayments: (queryString = '') => API.request(`/admin/payments${queryString}`),
+      getStats: () => API.request('/admin/payments/stats'),
+      refund: (id, reason) => API.request(`/admin/payments/${id}/refund`, {
+        method: 'POST',
+        body: JSON.stringify({ reason })
+      })
+    }
   }
 };
 
@@ -241,7 +266,19 @@ const UI = {
       disqualified: { class: 'badge-cancelled', label: 'Disqualified' },
       rejected: { class: 'badge-cancelled', label: 'Rejected' },
       pending: { class: 'badge-under_evaluation', label: 'Pending Verification' },
-      approved: { class: 'badge-awarded', label: 'Verified & Approved' }
+      approved: { class: 'badge-awarded', label: 'Verified & Approved' },
+      // Payment statuses
+      PAID: { class: 'badge-awarded', label: 'Paid / Confirmed' },
+      paid: { class: 'badge-awarded', label: 'Paid / Confirmed' },
+      CREATED: { class: 'badge-draft', label: 'Order Created' },
+      created: { class: 'badge-draft', label: 'Order Created' },
+      PENDING: { class: 'badge-under_evaluation', label: 'Pending' },
+      pending_payment: { class: 'badge-under_evaluation', label: 'Pending Payment' },
+      FAILED: { class: 'badge-cancelled', label: 'Payment Failed' },
+      failed: { class: 'badge-cancelled', label: 'Payment Failed' },
+      REFUND_PENDING: { class: 'badge-under_evaluation', label: 'Refund Pending' },
+      REFUNDED: { class: 'badge-closed', label: 'Refunded' },
+      refunded: { class: 'badge-closed', label: 'Refunded' }
     };
 
     const config = statusMap[status] || { class: 'badge-draft', label: status };

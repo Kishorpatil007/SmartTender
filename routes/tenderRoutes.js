@@ -99,6 +99,7 @@ router.post('/', verifyToken, requireRole('authority', 'admin'), upload.single('
       department,
       estimated_budget,
       emd_amount,
+      tender_fee,
       submission_deadline,
       opening_date,
       eligibility_criteria,
@@ -116,13 +117,14 @@ router.post('/', verifyToken, requireRole('authority', 'admin'), upload.single('
     const tender_code = `MIT-TND-${datePart}-${seq}`;
 
     const tenderStatus = status || 'draft';
+    const parsedTenderFee = tender_fee ? parseFloat(tender_fee) : 1000.00;
 
     const result = await dbHelper.run(`
       INSERT INTO tenders (
         tender_code, title, description, department, estimated_budget,
-        emd_amount, submission_deadline, opening_date, eligibility_criteria,
+        emd_amount, tender_fee, submission_deadline, opening_date, eligibility_criteria,
         status, created_by
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [
       tender_code,
       title,
@@ -130,6 +132,7 @@ router.post('/', verifyToken, requireRole('authority', 'admin'), upload.single('
       department,
       parseFloat(estimated_budget),
       parseFloat(emd_amount || 0),
+      parsedTenderFee,
       submission_deadline,
       opening_date,
       eligibility_criteria || '',
@@ -194,6 +197,7 @@ router.put('/:id', verifyToken, requireRole('authority', 'admin'), async (req, r
       department,
       estimated_budget,
       emd_amount,
+      tender_fee,
       submission_deadline,
       opening_date,
       eligibility_criteria,
@@ -216,6 +220,7 @@ router.put('/:id', verifyToken, requireRole('authority', 'admin'), async (req, r
         department = COALESCE(?, department),
         estimated_budget = COALESCE(?, estimated_budget),
         emd_amount = COALESCE(?, emd_amount),
+        tender_fee = COALESCE(?, tender_fee),
         submission_deadline = COALESCE(?, submission_deadline),
         opening_date = COALESCE(?, opening_date),
         eligibility_criteria = COALESCE(?, eligibility_criteria),
@@ -228,6 +233,7 @@ router.put('/:id', verifyToken, requireRole('authority', 'admin'), async (req, r
       department,
       estimated_budget ? parseFloat(estimated_budget) : null,
       emd_amount ? parseFloat(emd_amount) : null,
+      tender_fee ? parseFloat(tender_fee) : null,
       submission_deadline,
       opening_date,
       eligibility_criteria,
