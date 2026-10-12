@@ -265,7 +265,56 @@ async function loadTendersView() {
       return;
     }
 
-    container.innerHTML = res.tenders.map(t => `
+    // If logged in as contractor, load paid payment map to dynamically render "Apply Sealed Bid" vs "Pay Fees to Bid"
+    let paidTendersMap = {};
+    if (currentUser && currentUser.role === 'contractor') {
+      try {
+        const payRes = await API.payments.getHistory();
+        if (payRes && payRes.payments) {
+          payRes.payments.forEach(p => {
+            if (p.payment_status === 'PAID') {
+              if (!paidTendersMap[p.tender_id]) paidTendersMap[p.tender_id] = {};
+              paidTendersMap[p.tender_id][p.payment_type] = true;
+            }
+          });
+        }
+      } catch (payErr) {
+        console.warn('Could not load payment status for tenders grid:', payErr);
+      }
+    }
+
+    container.innerHTML = res.tenders.map(t => {
+      const emdNeeded = t.emd_amount && parseFloat(t.emd_amount) > 0;
+      const feePaid = paidTendersMap[t.id] && paidTendersMap[t.id]['TENDER_FEE'];
+      const emdPaid = !emdNeeded || (paidTendersMap[t.id] && paidTendersMap[t.id]['EMD']);
+      const isEligibleToBid = feePaid && emdPaid;
+
+      let actionBtn = '';
+      if (t.status === 'published') {
+        if (currentUser && currentUser.role === 'contractor') {
+          if (isEligibleToBid) {
+            actionBtn = `
+              <button class="btn btn-sm btn-success flex-fill" onclick="openBidModalForTender(${t.id}, '${t.tender_code}', '${t.title.replace(/'/g, "\\'")}')">
+                <i class="bi bi-send-check me-1"></i> Apply Sealed Bid
+              </button>
+            `;
+          } else {
+            actionBtn = `
+              <button class="btn btn-sm btn-outline-warning text-dark flex-fill" onclick="viewTenderDetails(${t.id})">
+                <i class="bi bi-wallet2 me-1"></i> Pay Fees to Bid
+              </button>
+            `;
+          }
+        } else {
+          actionBtn = `
+            <button class="btn btn-sm btn-outline-primary flex-fill" onclick="viewTenderDetails(${t.id})">
+              <i class="bi bi-eye me-1"></i> View Details & Pay
+            </button>
+          `;
+        }
+      }
+
+      return `
       <div class="col-lg-4 col-md-6 mb-4">
         <div class="tender-card p-4">
           <div class="d-flex justify-content-between align-items-center mb-2">
@@ -298,15 +347,12 @@ async function loadTendersView() {
             <button class="btn btn-sm btn-outline-primary flex-fill" onclick="viewTenderDetails(${t.id})">
               <i class="bi bi-info-circle me-1"></i> Specifications
             </button>
-            ${t.status === 'published' ? `
-              <button class="btn btn-sm btn-primary flex-fill" onclick="openBidModalForTender(${t.id}, '${t.tender_code}', '${t.title.replace(/'/g, "\\'")}')">
-                <i class="bi bi-send me-1"></i> Apply & Bid
-              </button>
-            ` : ''}
+            ${actionBtn}
           </div>
         </div>
       </div>
-    `).join('');
+      `;
+    }).join('');
   } catch (err) {
     console.error('Error loading tenders view:', err);
   }
@@ -419,9 +465,11 @@ window.viewTenderDetails = async function(tenderId) {
             const compMsg = document.getElementById('modal-payment-compliance-msg');
             if (compMsg) {
               if (payStatus.allPaid) {
-                compMsg.innerHTML = '<strong class="text-success"><i class="bi bi-check-circle-fill me-1"></i> Payment obligations verified! You are fully eligible to submit your sealed bid quotation.</strong>';
+                complianceAlert.className = 'alert alert-success d-flex align-items-center mb-3 border-0 bg-success bg-opacity-10 text-success rounded-3';
+                compMsg.innerHTML = '<strong class="text-success"><i class="bi bi-check-circle-fill me-1"></i> Payment Verified & Confirmed!</strong> All fee obligations are fulfilled. You are authorized to submit your sealed bid quotation. Click <strong>"Apply Sealed Bid"</strong> below.';
               } else {
-                compMsg.textContent = 'Note: Both Tender Application Fee and EMD (if required) must be paid before submitting your sealed quotation.';
+                complianceAlert.className = 'alert alert-warning d-flex align-items-center mb-3 border-0 bg-warning bg-opacity-10 text-dark rounded-3';
+                compMsg.innerHTML = '<strong class="text-danger"><i class="bi bi-lock-fill me-1"></i> Bidding Locked — Fee Payment Required:</strong> Both Tender Application Fee and EMD (if required) must be paid and verified below before you can apply or submit a sealed bid.';
               }
             }
           }
@@ -456,16 +504,39 @@ window.viewTenderDetails = async function(tenderId) {
       }
     }
 
-    // Bid action button
+    // Bid action button: Enabled ONLY after verified payment
     const bidBtn = document.getElementById('modal-tender-bid-btn');
     if (bidBtn) {
       if (t.status === 'published') {
         bidBtn.classList.remove('d-none');
-        bidBtn.onclick = () => {
-          const detailModal = bootstrap.Modal.getInstance(document.getElementById('tenderDetailModal'));
-          if (detailModal) detailModal.hide();
-          openBidModalForTender(t.id, t.tender_code, t.title);
-        };
+        if (currentUser && currentUser.role === 'contractor') {
+          if (payStatus && payStatus.allPaid) {
+            bidBtn.disabled = false;
+            bidBtn.className = 'btn btn-success';
+            bidBtn.innerHTML = '<i class="bi bi-send-check me-1"></i> Apply Sealed Bid';
+            bidBtn.onclick = () => {
+              const detailModal = bootstrap.Modal.getInstance(document.getElementById('tenderDetailModal'));
+              if (detailModal) detailModal.hide();
+              openBidModalForTender(t.id, t.tender_code, t.title);
+            };
+          } else {
+            bidBtn.disabled = true;
+            bidBtn.className = 'btn btn-secondary';
+            bidBtn.innerHTML = '<i class="bi bi-lock-fill me-1"></i> Pay Fees Above to Unlock Bidding';
+            bidBtn.onclick = null;
+          }
+        } else if (!currentUser) {
+          bidBtn.disabled = false;
+          bidBtn.className = 'btn btn-primary';
+          bidBtn.innerHTML = '<i class="bi bi-box-arrow-in-right me-1"></i> Sign In as Contractor to Bid';
+          bidBtn.onclick = () => {
+            const detailModal = bootstrap.Modal.getInstance(document.getElementById('tenderDetailModal'));
+            if (detailModal) detailModal.hide();
+            openBidModalForTender(t.id, t.tender_code, t.title);
+          };
+        } else {
+          bidBtn.classList.add('d-none');
+        }
       } else {
         bidBtn.classList.add('d-none');
       }
@@ -610,7 +681,7 @@ async function loadContractorView() {
   }
 }
 
-window.openBidModalForTender = function(tenderId, tenderCode, title) {
+window.openBidModalForTender = async function(tenderId, tenderCode, title) {
   if (!currentUser) {
     UI.showToast('Please sign in with your Contractor account to submit a bid.', 'info');
     const authModal = new bootstrap.Modal(document.getElementById('authModal'));
@@ -619,6 +690,21 @@ window.openBidModalForTender = function(tenderId, tenderCode, title) {
   }
   if (currentUser.role !== 'contractor') {
     UI.showToast('Only verified Contractors/Bidders can submit quotations.', 'error');
+    return;
+  }
+
+  // Pre-flight Payment Verification: Prevent applying or opening bid form without payment
+  try {
+    const payStatus = await API.payments.getTenderStatus(tenderId);
+    if (!payStatus || !payStatus.allPaid) {
+      UI.showToast('Payment Required: You must pay the Tender Application Fee and EMD before applying for this tender.', 'warning');
+      window.viewTenderDetails(tenderId);
+      return;
+    }
+  } catch (payErr) {
+    console.warn('Could not verify payment status before opening bid modal:', payErr);
+    UI.showToast('Could not verify fee payment compliance. Opening tender specifications.', 'warning');
+    window.viewTenderDetails(tenderId);
     return;
   }
 
@@ -1623,6 +1709,12 @@ function setupEventListeners() {
         navigateTo('contractor');
       } catch (err) {
         UI.showToast(err.message, 'error');
+        if (err.paymentRequired) {
+          const modal = bootstrap.Modal.getInstance(document.getElementById('submitBidModal'));
+          if (modal) modal.hide();
+          const tenderId = document.getElementById('bid-form-tender-id').value;
+          if (tenderId) window.viewTenderDetails(tenderId);
+        }
       }
     });
   }
@@ -2036,6 +2128,9 @@ window.initiatePayment = async function(paymentType) {
             if (currentView === 'contractor') {
               loadContractorPaymentsHistory();
             }
+            if (currentView === 'tenders') {
+              loadTendersView();
+            }
             openPaymentReceiptModal(verifyResult.payment);
           }
         } catch (verr) {
@@ -2136,6 +2231,28 @@ window.openPaymentReceiptModal = function(payment) {
     } else {
       banner.className = 'alert alert-warning py-2 px-3 mb-3 small rounded-3 fw-bold';
       banner.textContent = '⚠️ TEST TRANSACTION — NO REAL MONEY TRANSFERRED (DEMO / AUDIT SIMULATION)';
+    }
+  }
+
+  const proceedBtn = document.getElementById('btn-proceed-to-bid-from-receipt');
+  if (proceedBtn) {
+    if (payment.tender_id && currentUser && currentUser.role === 'contractor') {
+      API.payments.getTenderStatus(payment.tender_id).then(payStatus => {
+        if (payStatus && payStatus.allPaid) {
+          proceedBtn.classList.remove('d-none');
+          proceedBtn.onclick = () => {
+            const receiptModal = bootstrap.Modal.getInstance(document.getElementById('paymentReceiptModal'));
+            if (receiptModal) receiptModal.hide();
+            const detailModal = bootstrap.Modal.getInstance(document.getElementById('tenderDetailModal'));
+            if (detailModal) detailModal.hide();
+            openBidModalForTender(payment.tender_id, payment.tender_code, payment.tender_title);
+          };
+        } else {
+          proceedBtn.classList.add('d-none');
+        }
+      }).catch(() => proceedBtn.classList.add('d-none'));
+    } else {
+      proceedBtn.classList.add('d-none');
     }
   }
 

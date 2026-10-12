@@ -147,6 +147,39 @@ router.post('/bids', upload.array('documents', 5), async (req, res) => {
       return res.status(400).json({ success: false, message: 'You have already submitted a bid for this tender.' });
     }
 
+    // MANDATORY PAYMENT ENFORCEMENT:
+    // A contractor cannot apply or submit a sealed bid without verified payment.
+    const tenderFeePayment = await dbHelper.get(`
+      SELECT id, receipt_no, paid_at FROM payments
+      WHERE contractor_id = ? AND tender_id = ? AND payment_type = 'TENDER_FEE' AND payment_status = 'PAID'
+    `, [contractor.id, tender_id]);
+
+    if (!tenderFeePayment) {
+      return res.status(403).json({
+        success: false,
+        paymentRequired: true,
+        paymentType: 'TENDER_FEE',
+        message: 'Payment Required: You must pay and verify the Tender Application Fee before applying or submitting a sealed bid.'
+      });
+    }
+
+    const emdRequired = tender.emd_amount && parseFloat(tender.emd_amount) > 0;
+    if (emdRequired) {
+      const emdPayment = await dbHelper.get(`
+        SELECT id, receipt_no, paid_at FROM payments
+        WHERE contractor_id = ? AND tender_id = ? AND payment_type = 'EMD' AND payment_status = 'PAID'
+      `, [contractor.id, tender_id]);
+
+      if (!emdPayment) {
+        return res.status(403).json({
+          success: false,
+          paymentRequired: true,
+          paymentType: 'EMD',
+          message: 'Payment Required: You must pay and verify the Earnest Money Deposit (EMD) before applying or submitting a sealed bid.'
+        });
+      }
+    }
+
     const parsedBidAmount = parseFloat(bid_amount);
     if (isNaN(parsedBidAmount) || parsedBidAmount <= 0) {
       return res.status(400).json({ success: false, message: 'Please enter a valid quotation amount.' });

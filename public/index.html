@@ -1427,6 +1427,12 @@
         <form id="submit-bid-form" enctype="multipart/form-data">
           <input type="hidden" name="tender_id" id="bid-form-tender-id">
           <div class="modal-body">
+            <!-- Verified Payment Status Indicator -->
+            <div class="alert alert-success d-flex align-items-center py-2 px-3 mb-3 small rounded-3 border-0 bg-success bg-opacity-10 text-success">
+              <i class="bi bi-shield-fill-check fs-5 me-2"></i>
+              <div><strong>Payment Obligations Verified:</strong> Mandatory Tender Application Fee & EMD have been verified. You are authorized to submit your sealed bid quotation.</div>
+            </div>
+
             <div class="mb-3">
               <label class="form-label small fw-semibold">Commercial Bid Quotation (INR ₹)</label>
               <div class="input-group">
@@ -1961,6 +1967,9 @@
             </button>
             <button type="button" id="btn-download-pdf-receipt" class="btn btn-primary" onclick="downloadCurrentReceiptPdf()">
               <i class="bi bi-file-earmark-pdf-fill me-1"></i> Download Official PDF
+            </button>
+            <button type="button" id="btn-proceed-to-bid-from-receipt" class="btn btn-success d-none">
+              <i class="bi bi-send-check me-1"></i> Apply Sealed Bid Now
             </button>
           </div>
         </div>

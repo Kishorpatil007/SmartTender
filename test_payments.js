@@ -552,13 +552,90 @@ async function runPaymentTests() {
     assert(Number(adminStats.emdCount) >= 1, 'EMD payments counted');
     assert(Number(adminStats.totalCollectedRupees) > 0, 'Total revenue calculated from database');
     assert(adminRecords.payments.length >= 2, 'Admin payments list populated');
-    // 16. Re-initialize clean state for application
-    console.log('16. Re-initializing clean database state...');
+    // -------------------------------------------------------------------------
+    // TEST 16: Mandatory Payment Enforcement Before Bid Submission
+    // -------------------------------------------------------------------------
+    console.log('16. Testing Mandatory Payment Enforcement Before Bid Submission...');
+    const http = require('http');
+    const jwt = require('jsonwebtoken');
+    const app = require('./server');
+
+    const testServer = http.createServer(app);
+    await new Promise(resolve => testServer.listen(0, resolve));
+    const testPort = testServer.address().port;
+
+    const requestJson = (options, postData) => new Promise((resolve, reject) => {
+      const req = http.request(options, (res) => {
+        let data = '';
+        res.on('data', chunk => data += chunk);
+        res.on('end', () => {
+          try {
+            resolve({ statusCode: res.statusCode, data: data ? JSON.parse(data) : {} });
+          } catch (e) {
+            resolve({ statusCode: res.statusCode, raw: data });
+          }
+        });
+      });
+      req.on('error', reject);
+      if (postData) req.write(JSON.stringify(postData));
+      req.end();
+    });
+
+    try {
+      const tokenUnpaid = jwt.sign({ id: contractor2User.lastID, role: 'contractor', email: 'beta@electro.in' }, process.env.JWT_SECRET);
+      const tokenPaid = jwt.sign({ id: contractor1User.lastID, role: 'contractor', email: 'alpha@buildcon.in' }, process.env.JWT_SECRET);
+
+      // A. Unpaid contractor attempts to submit bid -> MUST be rejected with 403
+      const unpaidBidRes = await requestJson({
+        hostname: '127.0.0.1',
+        port: testPort,
+        path: '/api/contractor/bids',
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${tokenUnpaid}`,
+          'Content-Type': 'application/json'
+        }
+      }, {
+        tender_id: activeTender.lastID,
+        bid_amount: 4800000,
+        technical_proposal: 'Attempt without payment'
+      });
+
+      assert.strictEqual(unpaidBidRes.statusCode, 403, 'Unpaid contractor bid attempt must return 403 Forbidden');
+      assert.strictEqual(unpaidBidRes.data.paymentRequired, true, 'Response must flag paymentRequired');
+      assert(unpaidBidRes.data.message.includes('Payment Required'), 'Rejection message informs contractor that payment is required');
+
+      // B. Paid contractor (Contractor 1 has paid Tender Fee and EMD) -> MUST succeed with 201
+      const paidBidRes = await requestJson({
+        hostname: '127.0.0.1',
+        port: testPort,
+        path: '/api/contractor/bids',
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${tokenPaid}`,
+          'Content-Type': 'application/json'
+        }
+      }, {
+        tender_id: activeTender.lastID,
+        bid_amount: 4850000,
+        technical_proposal: 'Legitimate sealed bid after verified payments'
+      });
+
+      assert.strictEqual(paidBidRes.statusCode, 201, 'Paid contractor bid attempt must succeed with 201 Created');
+      assert.strictEqual(paidBidRes.data.success, true);
+      assert(paidBidRes.data.bidId, 'Bid record must be created in PostgreSQL');
+      console.log('✓ Mandatory payment enforcement verified: Unpaid bids rejected (403), paid bids accepted (201).');
+    } finally {
+      await new Promise(resolve => testServer.close(resolve));
+    }
+
+    // 17. Re-initialize clean state for application
+    console.log('17. Re-initializing clean database state...');
     await seedAccounts();
     console.log('✓ Seed completed: Database restored to pristine clean state.');
 
     console.log('\n========================================================================');
-    console.log('  ALL PAYMENT MODULE TESTS PASSED (15/15) ✓');
+    console.log('  ALL PAYMENT MODULE TESTS PASSED (16/16) ✓');
     console.log('  SECURE, MODULAR, IDEMPOTENT RAZORPAY INTEGRATION CONFIRMED');
     console.log('========================================================================\n');
   } finally {
