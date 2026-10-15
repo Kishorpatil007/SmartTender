@@ -27,38 +27,47 @@
 <body>
 
   <!-- Top Navigation Header -->
-  <header class="navbar navbar-expand-lg navbar-dark navbar-custom px-4 py-2.5 sticky-top">
+  <header class="navbar navbar-expand-lg navbar-dark navbar-custom px-2 px-sm-3 px-lg-4 py-2 sticky-top">
     <div class="container-fluid px-0">
-      <a class="navbar-brand d-flex align-items-center gap-2.5" href="javascript:void(0)" onclick="navigateTo('landing')">
-        <div class="bg-white text-primary p-2 rounded-3 d-flex align-items-center justify-content-center shadow-sm" style="width: 42px; height: 42px;">
-          <i class="bi bi-mortarboard-fill fs-4 text-primary"></i>
+      <!-- Mobile Sidebar Toggle -->
+      <button id="sidebar-toggle-btn" class="btn btn-outline-light btn-sm d-lg-none me-2 p-1.5 rounded-3 d-flex align-items-center justify-content-center" type="button" aria-label="Toggle navigation drawer" style="width: 38px; height: 38px;">
+        <i class="bi bi-list fs-4"></i>
+      </button>
+
+      <a class="navbar-brand d-flex align-items-center gap-2 gap-sm-2.5 me-auto me-lg-0" href="javascript:void(0)" onclick="navigateTo('landing')">
+        <div class="bg-white text-primary p-1.5 p-sm-2 rounded-3 d-flex align-items-center justify-content-center shadow-sm flex-shrink-0 navbar-brand-icon">
+          <i class="bi bi-mortarboard-fill fs-5 fs-sm-4 text-primary"></i>
         </div>
-        <div class="d-flex flex-column">
-          <div class="d-flex align-items-center gap-2">
-            <span class="fw-bold tracking-wide text-white" style="font-size: 1.15rem; letter-spacing: -0.2px;">MIT SMART TENDER MANAGEMENT SYSTEM</span>
-            <span class="brand-badge">MIT</span>
+        <div class="d-flex flex-column brand-text-group">
+          <div class="d-flex align-items-center gap-1.5 gap-sm-2">
+            <span class="fw-bold tracking-wide text-white brand-title">MIT SMART TENDER</span>
+            <span class="brand-badge d-none d-sm-inline-block">MIT</span>
           </div>
-          <span class="text-white-50" style="font-size: 0.68rem; letter-spacing: 0.8px;">MAHARASHTRA INSTITUTE OF TECHNOLOGY, CHHATRAPATI SAMBHAJINAGAR</span>
+          <span class="text-white-50 brand-subtitle d-none d-md-block">MAHARASHTRA INSTITUTE OF TECHNOLOGY, CHHATRAPATI SAMBHAJINAGAR</span>
+          <span class="text-white-50 brand-subtitle-short d-block d-md-none">MIT, Chh. Sambhajinagar</span>
         </div>
       </a>
 
       <!-- Right Header Actions -->
-      <div class="ms-auto d-flex align-items-center gap-3">
+      <div class="ms-auto d-flex align-items-center gap-2 gap-sm-3">
         <!-- Single Unified Sign In / Register Entry -->
         <div id="nav-guest-actions" class="d-flex gap-2">
-          <button class="btn btn-outline-light btn-sm px-3.5 py-1.5 rounded-pill shadow-sm" data-bs-toggle="modal" data-bs-target="#authModal">
-            <i class="bi bi-person-fill-lock me-1.5"></i> Sign In / Register
+          <button class="btn btn-outline-light btn-sm px-2.5 px-sm-3.5 py-1.5 rounded-pill shadow-sm" data-bs-toggle="modal" data-bs-target="#authModal">
+            <i class="bi bi-person-fill-lock me-1"></i>
+            <span class="d-none d-sm-inline">Sign In / Register</span>
+            <span class="d-inline d-sm-none">Sign In</span>
           </button>
         </div>
 
         <!-- Authenticated User Profile & Logout -->
-        <div id="nav-user-actions" class="d-none d-flex align-items-center gap-3">
-          <div class="d-flex align-items-center gap-2 bg-black bg-opacity-25 px-3 py-1.5 rounded-pill border border-white border-opacity-10">
-            <span id="active-role-badge" class="badge bg-primary">ROLE</span>
-            <span id="current-user-name" class="text-white fw-semibold small">User Name</span>
+        <div id="nav-user-actions" class="d-none d-flex align-items-center gap-2 gap-sm-3">
+          <div class="d-flex align-items-center gap-1.5 gap-sm-2 bg-black bg-opacity-25 px-2 px-sm-3 py-1.5 rounded-pill border border-white border-opacity-10">
+            <span id="active-role-badge" class="badge bg-primary text-uppercase" style="font-size: 0.68rem;">ROLE</span>
+            <span id="current-user-name" class="text-white fw-semibold small d-none d-sm-inline" style="max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">User Name</span>
           </div>
-          <button id="nav-logout-btn" class="btn btn-sm btn-outline-light rounded-pill px-3" title="Sign Out">
-            <i class="bi bi-box-arrow-right me-1"></i> Logout
+          <button id="nav-logout-btn" class="btn btn-sm btn-outline-light rounded-pill px-2.5 px-sm-3" title="Sign Out">
+            <i class="bi bi-box-arrow-right"></i>
+            <span class="d-none d-sm-inline ms-1">Logout</span>
           </button>
         </div>
       </div>
@@ -69,7 +78,22 @@
   <div class="app-container">
     
     <!-- Sidebar Navigation -->
-    <aside class="app-sidebar">
+    <aside class="app-sidebar" id="appSidebar">
+      <!-- Mobile Drawer Header -->
+      <div class="sidebar-header-mobile d-flex d-lg-none justify-content-between align-items-center px-3 pb-3 mb-2 border-bottom">
+        <div class="d-flex align-items-center gap-2">
+          <div class="bg-primary text-white p-1.5 rounded-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+            <i class="bi bi-mortarboard-fill fs-6"></i>
+          </div>
+          <div class="d-flex flex-column">
+            <span class="fw-bold text-dark" style="font-size: 0.92rem;">SmartTender Menu</span>
+            <span class="text-muted" style="font-size: 0.68rem;">MIT Chhatrapati Sambhajinagar</span>
+          </div>
+        </div>
+        <button id="sidebar-close-btn" class="btn btn-sm btn-light border rounded-circle p-1 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" aria-label="Close menu">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
       <ul class="nav flex-column sidebar-nav">
         
         <!-- Public Navigation -->
@@ -146,6 +170,9 @@
       </div>
     </aside>
 
+    <!-- Mobile Sidebar Backdrop Overlay -->
+    <div id="sidebar-backdrop" class="sidebar-backdrop d-lg-none"></div>
+
     <!-- Main Content Stage -->
     <main class="app-main">
 
@@ -155,7 +182,7 @@
       <div id="view-landing" class="view-container">
         
         <!-- Hero Section -->
-        <div class="p-5 mb-4 rounded-4 text-white position-relative overflow-hidden shadow-sm" style="background: linear-gradient(135deg, #0a2540 0%, #1e3a8a 60%, #1a56db 100%);">
+        <div class="p-4 p-md-5 mb-4 rounded-4 text-white position-relative overflow-hidden shadow-sm" style="background: linear-gradient(135deg, #0a2540 0%, #1e3a8a 60%, #1a56db 100%);">
           <div class="row align-items-center">
             <div class="col-lg-8">
               <span class="badge bg-warning text-dark fw-bold px-3 py-1.5 rounded-pill mb-3">
@@ -165,7 +192,7 @@
               <p class="lead text-white-50 mb-4" style="font-size: 1.05rem;">
                 Maharashtra Institute of Technology, Chhatrapati Sambhajinagar — Official digitized e-Tendering system for university laboratories, campus IT infrastructure, research equipment, civil renovation, and annual maintenance contracts with automated L1 evaluation and AI-assisted compliance verification.
               </p>
-              <div class="d-flex flex-wrap gap-3">
+              <div class="d-flex flex-column flex-sm-row gap-2 gap-sm-3">
                 <button class="btn btn-primary btn-lg px-4 py-2.5 shadow-sm" onclick="navigateTo('tenders')">
                   <i class="bi bi-search me-2"></i> Explore Active Tenders
                 </button>
@@ -181,8 +208,8 @@
         </div>
 
         <!-- High-level Metric Cards -->
-        <div class="row g-4 mb-5">
-          <div class="col-md-3">
+        <div class="row g-2 g-sm-3 g-md-4 mb-4 mb-md-5">
+          <div class="col-6 col-md-3">
             <div class="stat-card">
               <div class="d-flex justify-content-between align-items-center">
                 <div>
@@ -195,7 +222,7 @@
               </div>
             </div>
           </div>
-          <div class="col-md-3">
+          <div class="col-6 col-md-3">
             <div class="stat-card">
               <div class="d-flex justify-content-between align-items-center">
                 <div>
@@ -208,7 +235,7 @@
               </div>
             </div>
           </div>
-          <div class="col-md-3">
+          <div class="col-6 col-md-3">
             <div class="stat-card">
               <div class="d-flex justify-content-between align-items-center">
                 <div>
@@ -221,12 +248,12 @@
               </div>
             </div>
           </div>
-          <div class="col-md-3">
+          <div class="col-6 col-md-3">
             <div class="stat-card">
               <div class="d-flex justify-content-between align-items-center">
                 <div>
                   <div class="stat-label">Total Procurement Value</div>
-                  <div id="landing-stat-budget" class="stat-value text-dark" style="font-size: 1.35rem;">₹ 0</div>
+                  <div id="landing-stat-budget" class="stat-value text-dark" style="font-size: clamp(1rem, 2.5vw, 1.35rem);">₹ 0</div>
                 </div>
                 <div class="stat-icon-wrapper bg-warning bg-opacity-10 text-warning">
                   <i class="bi bi-cash-coin"></i>
@@ -432,29 +459,29 @@
         </div>
 
         <!-- Contractor Overview Cards -->
-        <div class="row g-4 mb-4">
-          <div class="col-md-3">
+        <div class="row g-2 g-sm-3 g-md-4 mb-4">
+          <div class="col-6 col-md-3">
             <div class="stat-card">
               <div class="stat-label">Total Bids Submitted</div>
               <div id="contractor-stat-bids" class="stat-value">0</div>
             </div>
           </div>
-          <div class="col-md-3">
+          <div class="col-6 col-md-3">
             <div class="stat-card">
               <div class="stat-label">Tenders Won (Awarded)</div>
               <div id="contractor-stat-won" class="stat-value text-success">0</div>
             </div>
           </div>
-          <div class="col-md-3">
+          <div class="col-6 col-md-3">
             <div class="stat-card">
               <div class="stat-label">Active Bids in Review</div>
               <div id="contractor-stat-active" class="stat-value text-primary">0</div>
             </div>
           </div>
-          <div class="col-md-3">
+          <div class="col-6 col-md-3">
             <div class="stat-card">
               <div class="stat-label">Total Awarded Value</div>
-              <div id="contractor-stat-value" class="stat-value text-dark" style="font-size: 1.35rem;">₹ 0</div>
+              <div id="contractor-stat-value" class="stat-value text-dark" style="font-size: clamp(1rem, 2.5vw, 1.35rem);">₹ 0</div>
             </div>
           </div>
         </div>
@@ -553,29 +580,29 @@
           </div>
 
           <!-- Contractor Contract Metric Cards -->
-          <div class="row g-3 mb-3">
-            <div class="col-md-3">
-              <div class="p-3 bg-light rounded-3 border">
-                <small class="text-muted d-block">Awarded Contracts</small>
-                <h4 id="contractor-contracts-stat-count" class="fw-bold mb-0 text-dark">0</h4>
+          <div class="row g-2 g-sm-3 mb-3">
+            <div class="col-6 col-md-3">
+              <div class="p-2.5 p-sm-3 bg-light rounded-3 border h-100">
+                <small class="text-muted d-block text-truncate">Awarded Contracts</small>
+                <h4 id="contractor-contracts-stat-count" class="fw-bold mb-0 text-dark" style="font-size: clamp(1.1rem, 2.5vw, 1.5rem);">0</h4>
               </div>
             </div>
-            <div class="col-md-3">
-              <div class="p-3 bg-light rounded-3 border">
-                <small class="text-muted d-block">Approved Payable</small>
-                <h4 id="contractor-contracts-stat-approved" class="fw-bold mb-0 text-primary">₹ 0</h4>
+            <div class="col-6 col-md-3">
+              <div class="p-2.5 p-sm-3 bg-light rounded-3 border h-100">
+                <small class="text-muted d-block text-truncate">Approved Payable</small>
+                <h4 id="contractor-contracts-stat-approved" class="fw-bold mb-0 text-primary" style="font-size: clamp(1rem, 2.5vw, 1.5rem);">₹ 0</h4>
               </div>
             </div>
-            <div class="col-md-3">
-              <div class="p-3 bg-light rounded-3 border">
-                <small class="text-muted d-block">Total Disbursed to Date</small>
-                <h4 id="contractor-contracts-stat-paid" class="fw-bold mb-0 text-success">₹ 0</h4>
+            <div class="col-6 col-md-3">
+              <div class="p-2.5 p-sm-3 bg-light rounded-3 border h-100">
+                <small class="text-muted d-block text-truncate">Disbursed to Date</small>
+                <h4 id="contractor-contracts-stat-paid" class="fw-bold mb-0 text-success" style="font-size: clamp(1rem, 2.5vw, 1.5rem);">₹ 0</h4>
               </div>
             </div>
-            <div class="col-md-3">
-              <div class="p-3 bg-light rounded-3 border">
-                <small class="text-muted d-block">Remaining Balance Owed</small>
-                <h4 id="contractor-contracts-stat-remaining" class="fw-bold mb-0 text-warning">₹ 0</h4>
+            <div class="col-6 col-md-3">
+              <div class="p-2.5 p-sm-3 bg-light rounded-3 border h-100">
+                <small class="text-muted d-block text-truncate">Remaining Balance</small>
+                <h4 id="contractor-contracts-stat-remaining" class="fw-bold mb-0 text-warning" style="font-size: clamp(1rem, 2.5vw, 1.5rem);">₹ 0</h4>
               </div>
             </div>
           </div>
@@ -685,29 +712,29 @@
         <!-- Institutional Administrator Banner -->
         <div id="admin-mode-banner"></div>
 
-        <div class="row g-4 mb-4">
-          <div class="col-md-3">
+        <div class="row g-2 g-sm-3 g-md-4 mb-4">
+          <div class="col-6 col-md-3">
             <div class="stat-card">
               <div class="stat-label">Total Users</div>
               <div id="admin-stat-users" class="stat-value">0</div>
             </div>
           </div>
-          <div class="col-md-3">
+          <div class="col-6 col-md-3">
             <div class="stat-card">
               <div class="stat-label">Total Vendors</div>
               <div id="admin-stat-contractors" class="stat-value">0</div>
             </div>
           </div>
-          <div class="col-md-3">
+          <div class="col-6 col-md-3">
             <div class="stat-card">
               <div class="stat-label">Pending Verification</div>
               <div id="admin-stat-pending" class="stat-value text-warning">0</div>
             </div>
           </div>
-          <div class="col-md-3">
+          <div class="col-6 col-md-3">
             <div class="stat-card">
-              <div class="stat-label">Total College Budget</div>
-              <div id="admin-stat-budget" class="stat-value text-success" style="font-size: 1.35rem;">₹ 0</div>
+              <div class="stat-label">Total Budget</div>
+              <div id="admin-stat-budget" class="stat-value text-success" style="font-size: clamp(1rem, 2.5vw, 1.35rem);">₹ 0</div>
             </div>
           </div>
         </div>
@@ -804,35 +831,35 @@
           </div>
 
           <!-- Financial KPI Metric Cards -->
-          <div class="row g-3 mb-4">
-            <div class="col-md-3">
-              <div class="p-3 bg-light rounded-3 border">
-                <small class="text-muted d-block">Total Transactions</small>
+          <div class="row g-2 g-sm-3 mb-4">
+            <div class="col-6 col-md-3">
+              <div class="p-2.5 p-sm-3 bg-light rounded-3 border h-100">
+                <small class="text-muted d-block text-truncate">Total Transactions</small>
                 <div class="d-flex align-items-baseline gap-2">
-                  <h4 id="admin-payment-stat-total" class="fw-bold mb-0">0</h4>
-                  <small id="admin-payment-stat-paid-count" class="text-success fw-semibold">0 Paid</small>
+                  <h4 id="admin-payment-stat-total" class="fw-bold mb-0" style="font-size: clamp(1.1rem, 2.5vw, 1.5rem);">0</h4>
+                  <small id="admin-payment-stat-paid-count" class="text-success fw-semibold small">0 Paid</small>
                 </div>
               </div>
             </div>
-            <div class="col-md-3">
-              <div class="p-3 bg-light rounded-3 border">
-                <small class="text-muted d-block">Tender Fees Collected</small>
-                <h4 id="admin-payment-stat-fee-total" class="fw-bold mb-0 text-primary">₹ 0</h4>
-                <small id="admin-payment-stat-fee-count" class="text-muted">0 Payments</small>
+            <div class="col-6 col-md-3">
+              <div class="p-2.5 p-sm-3 bg-light rounded-3 border h-100">
+                <small class="text-muted d-block text-truncate">Tender Fees</small>
+                <h4 id="admin-payment-stat-fee-total" class="fw-bold mb-0 text-primary" style="font-size: clamp(1rem, 2.5vw, 1.5rem);">₹ 0</h4>
+                <small id="admin-payment-stat-fee-count" class="text-muted small">0 Payments</small>
               </div>
             </div>
-            <div class="col-md-3">
-              <div class="p-3 bg-light rounded-3 border">
-                <small class="text-muted d-block">EMD Deposits Held</small>
-                <h4 id="admin-payment-stat-emd-total" class="fw-bold mb-0 text-success">₹ 0</h4>
-                <small id="admin-payment-stat-emd-count" class="text-muted">0 Active Deposits</small>
+            <div class="col-6 col-md-3">
+              <div class="p-2.5 p-sm-3 bg-light rounded-3 border h-100">
+                <small class="text-muted d-block text-truncate">EMD Deposits Held</small>
+                <h4 id="admin-payment-stat-emd-total" class="fw-bold mb-0 text-success" style="font-size: clamp(1rem, 2.5vw, 1.5rem);">₹ 0</h4>
+                <small id="admin-payment-stat-emd-count" class="text-muted small">0 Active Deposits</small>
               </div>
             </div>
-            <div class="col-md-3">
-              <div class="p-3 bg-light rounded-3 border">
-                <small class="text-muted d-block">Total Revenue / Volume</small>
-                <h4 id="admin-payment-stat-revenue-total" class="fw-bold mb-0 text-dark">₹ 0</h4>
-                <small id="admin-payment-stat-mode-desc" class="text-muted">Test Environment</small>
+            <div class="col-6 col-md-3">
+              <div class="p-2.5 p-sm-3 bg-light rounded-3 border h-100">
+                <small class="text-muted d-block text-truncate">Total Volume</small>
+                <h4 id="admin-payment-stat-revenue-total" class="fw-bold mb-0 text-dark" style="font-size: clamp(1rem, 2.5vw, 1.5rem);">₹ 0</h4>
+                <small id="admin-payment-stat-mode-desc" class="text-muted small">Test Environment</small>
               </div>
             </div>
           </div>
@@ -926,36 +953,36 @@
           </div>
 
           <!-- Financial KPI Metrics -->
-          <div class="row g-3 mb-4">
-            <div class="col-md-3">
-              <div class="p-3 bg-light rounded-3 border">
-                <small class="text-muted d-block">Approved Payable (Total)</small>
-                <h4 id="admin-cp-stat-approved" class="fw-bold mb-0 text-primary">₹ 0</h4>
-                <small id="admin-cp-stat-contracts-count" class="text-muted">0 Active Contracts</small>
+          <div class="row g-2 g-sm-3 mb-4">
+            <div class="col-6 col-md-3">
+              <div class="p-2.5 p-sm-3 bg-light rounded-3 border h-100">
+                <small class="text-muted d-block text-truncate">Approved Payable</small>
+                <h4 id="admin-cp-stat-approved" class="fw-bold mb-0 text-primary" style="font-size: clamp(1rem, 2.5vw, 1.5rem);">₹ 0</h4>
+                <small id="admin-cp-stat-contracts-count" class="text-muted small">0 Active Contracts</small>
               </div>
             </div>
-            <div class="col-md-3">
-              <div class="p-3 bg-light rounded-3 border">
-                <small class="text-muted d-block">Total Disbursed to Date</small>
-                <h4 id="admin-cp-stat-disbursed" class="fw-bold mb-0 text-success">₹ 0</h4>
-                <small id="admin-cp-stat-paid-count" class="text-muted">0 Fully Settled</small>
+            <div class="col-6 col-md-3">
+              <div class="p-2.5 p-sm-3 bg-light rounded-3 border h-100">
+                <small class="text-muted d-block text-truncate">Disbursed to Date</small>
+                <h4 id="admin-cp-stat-disbursed" class="fw-bold mb-0 text-success" style="font-size: clamp(1rem, 2.5vw, 1.5rem);">₹ 0</h4>
+                <small id="admin-cp-stat-paid-count" class="text-muted small">0 Fully Settled</small>
               </div>
             </div>
-            <div class="col-md-3">
-              <div class="p-3 bg-light rounded-3 border">
-                <small class="text-muted d-block">Remaining Institutional Liability</small>
-                <h4 id="admin-cp-stat-remaining" class="fw-bold mb-0 text-warning">₹ 0</h4>
-                <small class="text-muted">Outstanding balance</small>
+            <div class="col-6 col-md-3">
+              <div class="p-2.5 p-sm-3 bg-light rounded-3 border h-100">
+                <small class="text-muted d-block text-truncate">Remaining Liability</small>
+                <h4 id="admin-cp-stat-remaining" class="fw-bold mb-0 text-warning" style="font-size: clamp(1rem, 2.5vw, 1.5rem);">₹ 0</h4>
+                <small class="text-muted small">Outstanding balance</small>
               </div>
             </div>
-            <div class="col-md-3">
-              <div class="p-3 bg-light rounded-3 border">
-                <small class="text-muted d-block">Pending Actions</small>
+            <div class="col-6 col-md-3">
+              <div class="p-2.5 p-sm-3 bg-light rounded-3 border h-100">
+                <small class="text-muted d-block text-truncate">Pending Actions</small>
                 <div class="d-flex align-items-baseline gap-2">
-                  <h4 id="admin-cp-stat-pending-claims" class="fw-bold mb-0 text-danger">0</h4>
-                  <small class="text-muted">Claims awaiting review</small>
+                  <h4 id="admin-cp-stat-pending-claims" class="fw-bold mb-0 text-danger" style="font-size: clamp(1.1rem, 2.5vw, 1.5rem);">0</h4>
+                  <small class="text-muted small">Claims to review</small>
                 </div>
-                <small id="admin-cp-stat-pending-inspections" class="text-muted">0 Inspections pending</small>
+                <small id="admin-cp-stat-pending-inspections" class="text-muted small">0 Inspections</small>
               </div>
             </div>
           </div>
@@ -1110,33 +1137,33 @@
           </div>
 
           <!-- Financial KPI Metrics for EMD Refunds -->
-          <div class="row g-3 mb-4">
-            <div class="col-md-3">
-              <div class="p-3 bg-light rounded-3 border">
-                <small class="text-muted d-block">Total EMD Collected</small>
-                <h4 id="admin-emd-stat-collected" class="fw-bold mb-0 text-dark">₹ 0</h4>
-                <small id="admin-emd-stat-collected-count" class="text-muted">0 Deposits</small>
+          <div class="row g-2 g-sm-3 mb-4">
+            <div class="col-6 col-md-3">
+              <div class="p-2.5 p-sm-3 bg-light rounded-3 border h-100">
+                <small class="text-muted d-block text-truncate">Total EMD Collected</small>
+                <h4 id="admin-emd-stat-collected" class="fw-bold mb-0 text-dark" style="font-size: clamp(1rem, 2.5vw, 1.5rem);">₹ 0</h4>
+                <small id="admin-emd-stat-collected-count" class="text-muted small">0 Deposits</small>
               </div>
             </div>
-            <div class="col-md-3">
-              <div class="p-3 bg-light rounded-3 border">
-                <small class="text-muted d-block">Eligible for Refund</small>
-                <h4 id="admin-emd-stat-eligible" class="fw-bold mb-0 text-primary">₹ 0</h4>
-                <small id="admin-emd-stat-eligible-count" class="text-muted">0 Bidders Eligible</small>
+            <div class="col-6 col-md-3">
+              <div class="p-2.5 p-sm-3 bg-light rounded-3 border h-100">
+                <small class="text-muted d-block text-truncate">Eligible for Refund</small>
+                <h4 id="admin-emd-stat-eligible" class="fw-bold mb-0 text-primary" style="font-size: clamp(1rem, 2.5vw, 1.5rem);">₹ 0</h4>
+                <small id="admin-emd-stat-eligible-count" class="text-muted small">0 Bidders Eligible</small>
               </div>
             </div>
-            <div class="col-md-3">
-              <div class="p-3 bg-light rounded-3 border">
-                <small class="text-muted d-block">Refunds Completed</small>
-                <h4 id="admin-emd-stat-completed" class="fw-bold mb-0 text-success">₹ 0</h4>
-                <small id="admin-emd-stat-completed-count" class="text-muted">0 Successfully Refunded</small>
+            <div class="col-6 col-md-3">
+              <div class="p-2.5 p-sm-3 bg-light rounded-3 border h-100">
+                <small class="text-muted d-block text-truncate">Refunds Completed</small>
+                <h4 id="admin-emd-stat-completed" class="fw-bold mb-0 text-success" style="font-size: clamp(1rem, 2.5vw, 1.5rem);">₹ 0</h4>
+                <small id="admin-emd-stat-completed-count" class="text-muted small">0 Settled</small>
               </div>
             </div>
-            <div class="col-md-3">
-              <div class="p-3 bg-light rounded-3 border">
-                <small class="text-muted d-block">EMD Forfeitures</small>
-                <h4 id="admin-emd-stat-forfeited" class="fw-bold mb-0 text-danger">₹ 0</h4>
-                <small id="admin-emd-stat-forfeited-count" class="text-muted">0 Forfeited to MIT</small>
+            <div class="col-6 col-md-3">
+              <div class="p-2.5 p-sm-3 bg-light rounded-3 border h-100">
+                <small class="text-muted d-block text-truncate">EMD Forfeitures</small>
+                <h4 id="admin-emd-stat-forfeited" class="fw-bold mb-0 text-danger" style="font-size: clamp(1rem, 2.5vw, 1.5rem);">₹ 0</h4>
+                <small id="admin-emd-stat-forfeited-count" class="text-muted small">0 Forfeited</small>
               </div>
             </div>
           </div>
@@ -1310,64 +1337,64 @@
           </div>
 
           <!-- High-Level Financial Reconciliations Grid -->
-          <div class="row g-3 mb-4">
-            <div class="col-md-3">
-              <div class="p-3 bg-light rounded-3 border">
-                <small class="text-muted d-block">Approved Contractor Payable</small>
-                <h4 id="report-fin-approved-payable" class="fw-bold mb-0 text-primary">₹ 0</h4>
-                <small id="report-fin-awarded-contracts-count" class="text-muted">0 Awarded Contracts</small>
+          <div class="row g-2 g-sm-3 mb-3 mb-sm-4">
+            <div class="col-6 col-md-3">
+              <div class="p-2.5 p-sm-3 bg-light rounded-3 border h-100">
+                <small class="text-muted d-block text-truncate">Approved Payable</small>
+                <h4 id="report-fin-approved-payable" class="fw-bold mb-0 text-primary" style="font-size: clamp(1rem, 2.5vw, 1.5rem);">₹ 0</h4>
+                <small id="report-fin-awarded-contracts-count" class="text-muted small">0 Contracts</small>
               </div>
             </div>
-            <div class="col-md-3">
-              <div class="p-3 bg-light rounded-3 border">
-                <small class="text-muted d-block">Total Payments Completed</small>
-                <h4 id="report-fin-payments-completed" class="fw-bold mb-0 text-success">₹ 0</h4>
-                <small id="report-fin-settled-contracts-count" class="text-muted">0 Fully Settled</small>
+            <div class="col-6 col-md-3">
+              <div class="p-2.5 p-sm-3 bg-light rounded-3 border h-100">
+                <small class="text-muted d-block text-truncate">Payments Done</small>
+                <h4 id="report-fin-payments-completed" class="fw-bold mb-0 text-success" style="font-size: clamp(1rem, 2.5vw, 1.5rem);">₹ 0</h4>
+                <small id="report-fin-settled-contracts-count" class="text-muted small">0 Fully Settled</small>
               </div>
             </div>
-            <div class="col-md-3">
-              <div class="p-3 bg-light rounded-3 border">
-                <small class="text-muted d-block">Remaining Contractor Liabilities</small>
-                <h4 id="report-fin-remaining-liabilities" class="fw-bold mb-0 text-warning">₹ 0</h4>
-                <small class="text-muted">Undisbursed institutional balance</small>
+            <div class="col-6 col-md-3">
+              <div class="p-2.5 p-sm-3 bg-light rounded-3 border h-100">
+                <small class="text-muted d-block text-truncate">Remaining Liabilities</small>
+                <h4 id="report-fin-remaining-liabilities" class="fw-bold mb-0 text-warning" style="font-size: clamp(1rem, 2.5vw, 1.5rem);">₹ 0</h4>
+                <small class="text-muted small">Undisbursed</small>
               </div>
             </div>
-            <div class="col-md-3">
-              <div class="p-3 bg-light rounded-3 border">
-                <small class="text-muted d-block">Pending Payment Claims</small>
-                <h4 id="report-fin-pending-claims-val" class="fw-bold mb-0 text-danger">₹ 0</h4>
-                <small id="report-fin-pending-claims-count" class="text-muted">0 Claims Awaiting Review</small>
+            <div class="col-6 col-md-3">
+              <div class="p-2.5 p-sm-3 bg-light rounded-3 border h-100">
+                <small class="text-muted d-block text-truncate">Pending Claims</small>
+                <h4 id="report-fin-pending-claims-val" class="fw-bold mb-0 text-danger" style="font-size: clamp(1rem, 2.5vw, 1.5rem);">₹ 0</h4>
+                <small id="report-fin-pending-claims-count" class="text-muted small">0 In Review</small>
               </div>
             </div>
           </div>
 
-          <div class="row g-3 mb-4">
-            <div class="col-md-3">
-              <div class="p-3 bg-light rounded-3 border">
-                <small class="text-muted d-block">Total EMD Collected</small>
-                <h4 id="report-fin-emd-collected" class="fw-bold mb-0 text-dark">₹ 0</h4>
-                <small id="report-fin-emd-collected-count" class="text-muted">0 Inbound EMD Deposits</small>
+          <div class="row g-2 g-sm-3 mb-4">
+            <div class="col-6 col-md-3">
+              <div class="p-2.5 p-sm-3 bg-light rounded-3 border h-100">
+                <small class="text-muted d-block text-truncate">EMD Collected</small>
+                <h4 id="report-fin-emd-collected" class="fw-bold mb-0 text-dark" style="font-size: clamp(1rem, 2.5vw, 1.5rem);">₹ 0</h4>
+                <small id="report-fin-emd-collected-count" class="text-muted small">0 Deposits</small>
               </div>
             </div>
-            <div class="col-md-3">
-              <div class="p-3 bg-light rounded-3 border">
-                <small class="text-muted d-block">Total EMD Eligible for Refund</small>
-                <h4 id="report-fin-emd-eligible" class="fw-bold mb-0 text-primary">₹ 0</h4>
-                <small id="report-fin-emd-eligible-count" class="text-muted">0 Bidders Eligible</small>
+            <div class="col-6 col-md-3">
+              <div class="p-2.5 p-sm-3 bg-light rounded-3 border h-100">
+                <small class="text-muted d-block text-truncate">Eligible for Return</small>
+                <h4 id="report-fin-emd-eligible" class="fw-bold mb-0 text-primary" style="font-size: clamp(1rem, 2.5vw, 1.5rem);">₹ 0</h4>
+                <small id="report-fin-emd-eligible-count" class="text-muted small">0 Bidders</small>
               </div>
             </div>
-            <div class="col-md-3">
-              <div class="p-3 bg-light rounded-3 border">
-                <small class="text-muted d-block">EMD Refunds Completed</small>
-                <h4 id="report-fin-emd-refunded" class="fw-bold mb-0 text-success">₹ 0</h4>
-                <small id="report-fin-emd-refunded-count" class="text-muted">0 Successfully Returned</small>
+            <div class="col-6 col-md-3">
+              <div class="p-2.5 p-sm-3 bg-light rounded-3 border h-100">
+                <small class="text-muted d-block text-truncate">Refunds Done</small>
+                <h4 id="report-fin-emd-refunded" class="fw-bold mb-0 text-success" style="font-size: clamp(1rem, 2.5vw, 1.5rem);">₹ 0</h4>
+                <small id="report-fin-emd-refunded-count" class="text-muted small">0 Returned</small>
               </div>
             </div>
-            <div class="col-md-3">
-              <div class="p-3 bg-light rounded-3 border">
-                <small class="text-muted d-block">Total EMD Forfeitures</small>
-                <h4 id="report-fin-emd-forfeited" class="fw-bold mb-0 text-danger">₹ 0</h4>
-                <small id="report-fin-emd-forfeited-count" class="text-muted">0 Deposits Forfeited</small>
+            <div class="col-6 col-md-3">
+              <div class="p-2.5 p-sm-3 bg-light rounded-3 border h-100">
+                <small class="text-muted d-block text-truncate">Total Forfeitures</small>
+                <h4 id="report-fin-emd-forfeited" class="fw-bold mb-0 text-danger" style="font-size: clamp(1rem, 2.5vw, 1.5rem);">₹ 0</h4>
+                <small id="report-fin-emd-forfeited-count" class="text-muted small">0 Forfeited</small>
               </div>
             </div>
           </div>

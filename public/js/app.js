@@ -164,6 +164,11 @@ function navigateTo(viewName) {
       break;
   }
 
+  // Close mobile sidebar if open on smaller screens
+  if (window.innerWidth < 992) {
+    closeMobileSidebar();
+  }
+
   window.scrollTo(0, 0);
 }
 
@@ -1454,9 +1459,61 @@ function renderTenderStatusChart(statusData) {
 }
 
 // ----------------------------------------------------
+// MOBILE NAVIGATION DRAWER HELPERS
+// ----------------------------------------------------
+function openMobileSidebar() {
+  const sidebar = document.getElementById('appSidebar');
+  const backdrop = document.getElementById('sidebar-backdrop');
+  if (sidebar) sidebar.classList.add('show');
+  if (backdrop) backdrop.classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeMobileSidebar() {
+  const sidebar = document.getElementById('appSidebar');
+  const backdrop = document.getElementById('sidebar-backdrop');
+  if (sidebar) sidebar.classList.remove('show');
+  if (backdrop) backdrop.classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+function toggleMobileSidebar() {
+  const sidebar = document.getElementById('appSidebar');
+  if (sidebar && sidebar.classList.contains('show')) {
+    closeMobileSidebar();
+  } else {
+    openMobileSidebar();
+  }
+}
+
+// ----------------------------------------------------
 // EVENT LISTENERS & FORMS SETUP
 // ----------------------------------------------------
 function setupEventListeners() {
+  // Mobile sidebar drawer triggers
+  const sidebarToggleBtn = document.getElementById('sidebar-toggle-btn');
+  const sidebarCloseBtn = document.getElementById('sidebar-close-btn');
+  const sidebarBackdrop = document.getElementById('sidebar-backdrop');
+
+  if (sidebarToggleBtn) {
+    sidebarToggleBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleMobileSidebar();
+    });
+  }
+  if (sidebarCloseBtn) {
+    sidebarCloseBtn.addEventListener('click', () => closeMobileSidebar());
+  }
+  if (sidebarBackdrop) {
+    sidebarBackdrop.addEventListener('click', () => closeMobileSidebar());
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeMobileSidebar();
+    }
+  });
+
   // Navigation links
   document.querySelectorAll('[data-view]').forEach(el => {
     el.addEventListener('click', (e) => {

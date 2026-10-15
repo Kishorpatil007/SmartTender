@@ -289,3 +289,38 @@
   0%, 80%, 100% { transform: scale(0); }
   40% { transform: scale(1); }
 }
+
+/* Mobile Responsiveness for AI Assistant (< 576px) */
+@media (max-width: 575.98px) {
+  .ai-chat-fab {
+    bottom: 16px;
+    right: 16px;
+  }
+
+  .ai-chat-btn {
+    width: 52px;
+    height: 52px;
+    font-size: 1.35rem;
+  }
+
+  .ai-chat-tooltip {
+    display: none !important;
+  }
+
+  .ai-chat-window {
+    position: fixed;
+    inset-inline: 10px;
+    right: 10px;
+    left: 10px;
+    bottom: 76px;
+    width: auto;
+    max-width: none;
+    height: min(520px, calc(100dvh - 90px));
+    max-height: calc(100dvh - 90px);
+    border-radius: 16px;
+  }
+
+  .ai-chat-input-area input {
+    font-size: 16px !important;
+  }
+}

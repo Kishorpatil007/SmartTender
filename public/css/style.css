@@ -14,42 +14,97 @@
   --text-main: #1e293b;
   --text-muted: #64748b;
   --sidebar-width: 270px;
+  --navbar-height: 68px;
+}
+
+/* Reset & Base Typography */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background-color: var(--surface-bg);
   color: var(--text-main);
-  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
+  margin: 0;
+  overflow-x: hidden;
 }
 
-/* Navbar */
+/* Fluid Headings */
+h1, .h1 { font-size: clamp(1.4rem, 3.2vw, 2.25rem); }
+h2, .h2 { font-size: clamp(1.25rem, 2.8vw, 1.85rem); }
+h3, .h3 { font-size: clamp(1.15rem, 2.2vw, 1.5rem); }
+h4, .h4 { font-size: clamp(1.05rem, 1.8vw, 1.3rem); }
+h5, .h5 { font-size: clamp(0.95rem, 1.5vw, 1.15rem); }
+
+/* ==========================================================================
+   1. NAVIGATION HEADER
+   ========================================================================== */
 .navbar-custom {
   background: linear-gradient(135deg, #0a2540 0%, #1e3a8a 100%);
   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: 0 4px 14px rgba(10, 37, 64, 0.15);
+  min-height: var(--navbar-height);
+  padding: 8px 16px;
+  z-index: 1040;
+}
+
+.navbar-brand-icon {
+  width: 40px;
+  height: 40px;
+  transition: transform 0.2s ease;
+}
+
+.navbar-brand:hover .navbar-brand-icon {
+  transform: scale(1.05);
+}
+
+.brand-title {
+  font-size: clamp(0.95rem, 2.4vw, 1.15rem);
+  letter-spacing: -0.2px;
+  line-height: 1.2;
 }
 
 .brand-badge {
   background: linear-gradient(135deg, #f59e0b, #d97706);
   color: white;
-  padding: 3px 8px;
+  padding: 2px 7px;
   border-radius: 4px;
   font-weight: 700;
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   letter-spacing: 0.5px;
 }
 
-/* Layout */
+.brand-subtitle {
+  font-size: 0.68rem;
+  letter-spacing: 0.8px;
+}
+
+.brand-subtitle-short {
+  font-size: 0.65rem;
+  letter-spacing: 0.4px;
+}
+
+/* ==========================================================================
+   2. APP CONTAINER & SIDEBAR (DESKTOP & OFFCANVAS MOBILE)
+   ========================================================================== */
 .app-container {
   display: flex;
   flex: 1;
-  min-height: calc(100vh - 120px);
+  min-height: calc(100dvh - var(--navbar-height));
+  position: relative;
+  width: 100%;
 }
 
-/* Sidebar */
+/* Desktop Sidebar */
 .app-sidebar {
   width: var(--sidebar-width);
   background: #ffffff;
@@ -57,24 +112,33 @@ body {
   padding: 20px 0;
   display: flex;
   flex-direction: column;
-  box-shadow: 2px 0 8px rgba(0,0,0,0.02);
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.02);
+  flex-shrink: 0;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+}
+
+.sidebar-nav {
+  padding-left: 0;
+  list-style: none;
+  margin-bottom: 0;
 }
 
 .sidebar-nav .nav-item {
-  margin-bottom: 4px;
+  margin-bottom: 3px;
 }
 
 .sidebar-nav .nav-link {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 20px;
+  padding: 12px 20px;
   color: var(--text-muted);
   font-weight: 500;
   font-size: 0.92rem;
   border-left: 3px solid transparent;
   transition: all 0.2s ease;
   cursor: pointer;
+  min-height: 44px; /* Accessible touch target */
 }
 
 .sidebar-nav .nav-link:hover {
@@ -90,7 +154,7 @@ body {
 }
 
 .sidebar-section-title {
-  padding: 12px 20px 6px;
+  padding: 14px 20px 6px;
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.8px;
@@ -98,51 +162,125 @@ body {
   color: #94a3b8;
 }
 
-/* Main Content */
-.app-main {
-  flex: 1;
-  padding: 28px 36px;
-  overflow-y: auto;
-  max-width: 1600px;
+/* Mobile Sidebar Drawer (< 992px) */
+@media (max-width: 991.98px) {
+  .app-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(300px, 86vw);
+    height: 100dvh;
+    z-index: 1060;
+    transform: translateX(-100%);
+    box-shadow: none;
+    padding-top: 16px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .app-sidebar.show {
+    transform: translateX(0);
+    box-shadow: 0 0 50px rgba(10, 37, 64, 0.35);
+  }
+
+  /* Backdrop Overlay */
+  .sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 37, 64, 0.55);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 1055;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+
+  .sidebar-backdrop.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
 }
 
-/* Cards & Stats */
+/* ==========================================================================
+   3. MAIN CONTENT STAGE
+   ========================================================================== */
+.app-main {
+  flex: 1;
+  min-width: 0; /* Prevents flex children from causing horizontal overflow */
+  padding: clamp(14px, 2.5vw, 32px);
+  overflow-y: auto;
+  max-width: 100%;
+}
+
+.view-container {
+  animation: fadeIn 0.25s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive View Header */
+.view-header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+@media (min-width: 576px) {
+  .view-header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+/* ==========================================================================
+   4. CARDS & STAT METRICS
+   ========================================================================== */
 .stat-card {
   background: #ffffff;
   border-radius: 12px;
   border: 1px solid var(--border-color);
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  padding: clamp(14px, 1.8vw, 20px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   position: relative;
   overflow: hidden;
+  height: 100%;
 }
 
 .stat-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
 }
 
 .stat-card .stat-icon-wrapper {
-  width: 48px;
-  height: 48px;
+  width: clamp(40px, 4vw, 48px);
+  height: clamp(40px, 4vw, 48px);
   border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.4rem;
+  font-size: clamp(1.2rem, 2vw, 1.4rem);
+  flex-shrink: 0;
 }
 
 .stat-card .stat-value {
-  font-size: 1.75rem;
+  font-size: clamp(1.3rem, 3.2vw, 1.75rem);
   font-weight: 700;
   color: var(--primary-navy);
   margin-top: 6px;
   margin-bottom: 2px;
+  line-height: 1.2;
 }
 
 .stat-card .stat-label {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   color: var(--text-muted);
   font-weight: 500;
 }
@@ -152,7 +290,7 @@ body {
   background: white;
   border-radius: 12px;
   border: 1px solid var(--border-color);
-  box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
   transition: all 0.2s ease;
   display: flex;
   flex-direction: column;
@@ -161,7 +299,7 @@ body {
 
 .tender-card:hover {
   border-color: #cbd5e1;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.07);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.07);
 }
 
 .tender-code {
@@ -172,16 +310,19 @@ body {
   padding: 3px 8px;
   border-radius: 4px;
   color: #334155;
+  display: inline-block;
+  white-space: nowrap;
 }
 
 /* Badges */
 .badge-status {
-  padding: 6px 12px;
+  padding: 5px 10px;
   border-radius: 20px;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.4px;
+  white-space: nowrap;
 }
 
 .badge-draft { background-color: #f1f5f9; color: #475569; }
@@ -198,45 +339,224 @@ body {
   padding: 4px 10px;
   border-radius: 6px;
   box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
+  white-space: nowrap;
 }
 
-/* Comparative Table */
+.badge-test-mode {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.badge-live-mode {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   5. RESPONSIVE TABLES
+   ========================================================================== */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 10px;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+  max-width: 100%;
+}
+
+.table-responsive::-webkit-scrollbar {
+  height: 6px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.table-responsive thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background-color: #f8fafc;
+  font-weight: 600;
+  font-size: 0.82rem;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  border-bottom: 2px solid #e2e8f0;
+  white-space: nowrap;
+  padding: 12px 14px;
+}
+
+.table td {
+  padding: 12px 14px;
+  vertical-align: middle;
+  font-size: 0.88rem;
+}
+
+/* Cell Wrapping Classes */
+.table td.text-nowrap,
+.table th.text-nowrap {
+  white-space: nowrap;
+}
+
+.table td.cell-wrap-title {
+  min-width: 180px;
+  max-width: 320px;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.table-action-btn-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
 .comparison-table th {
   background-color: #f8fafc;
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   color: #475569;
   border-bottom: 2px solid #e2e8f0;
-}
-
-.comparison-table td {
-  vertical-align: middle;
-  font-size: 0.9rem;
+  white-space: nowrap;
 }
 
 .row-l1 {
   background-color: #f0fdf4 !important;
 }
 
-/* Modals */
+/* ==========================================================================
+   6. RESPONSIVE MODALS
+   ========================================================================== */
 .modal-content {
   border-radius: 16px;
   border: none;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
 }
 
 .modal-header {
   border-bottom: 1px solid #f1f5f9;
-  padding: 20px 24px;
+  padding: clamp(14px, 2vw, 20px) clamp(16px, 2.5vw, 24px);
 }
 
 .modal-body {
-  padding: 24px;
+  padding: clamp(14px, 2vw, 24px);
+  max-height: calc(100dvh - 160px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .modal-footer {
   border-top: 1px solid #f1f5f9;
-  padding: 16px 24px;
+  padding: clamp(12px, 1.8vw, 16px) clamp(16px, 2.5vw, 24px);
+}
+
+/* Modal Small-Screen (< 576px) Adaptations */
+@media (max-width: 575.98px) {
+  .modal-dialog {
+    margin: 0.5rem auto;
+    width: calc(100% - 1rem);
+    max-width: 500px;
+  }
+
+  .modal-content {
+    max-height: calc(100dvh - 1rem);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .modal-body {
+    max-height: calc(100dvh - 140px);
+  }
+
+  .modal-footer {
+    flex-direction: column !important;
+    gap: 8px !important;
+    align-items: stretch !important;
+  }
+
+  .modal-footer > * {
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+
+  .modal-footer .btn {
+    width: 100% !important;
+    min-height: 44px; /* Accessible touch target */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 !important;
+  }
+}
+
+/* ==========================================================================
+   7. FORM CONTROLS & TOUCH TARGETS
+   ========================================================================== */
+.form-control,
+.form-select {
+  border-color: #cbd5e1;
+  border-radius: 8px;
+  padding: 8px 12px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  min-height: 40px;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 3px rgba(26, 86, 219, 0.15);
+}
+
+/* Prevent auto-zoom on iOS Safari */
+@media (max-width: 767.98px) {
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="url"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+.btn {
+  border-radius: 8px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.btn:active {
+  transform: scale(0.98);
 }
 
 .btn-primary {
@@ -249,49 +569,59 @@ body {
   border-color: #1340b0;
 }
 
-/* Toast container */
+/* ==========================================================================
+   8. TOAST NOTIFICATIONS (MOBILE OPTIMIZED)
+   ========================================================================== */
 .toast-container-custom {
   position: fixed;
   bottom: 24px;
   right: 24px;
   z-index: 1090;
+  max-width: 380px;
 }
 
-/* Payment Module Specific Styles */
-.badge-test-mode {
-  background: #fef3c7;
-  color: #92400e;
-  border: 1px solid #fde68a;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  padding: 4px 10px;
-  border-radius: 6px;
+@media (max-width: 575.98px) {
+  .toast-container-custom {
+    bottom: 12px;
+    right: 12px;
+    left: 12px;
+    max-width: none;
+    width: auto;
+  }
+  
+  .toast-container-custom .toast {
+    width: 100%;
+  }
 }
 
-.badge-live-mode {
-  background: #dcfce7;
-  color: #166534;
-  border: 1px solid #bbf7d0;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  padding: 4px 10px;
-  border-radius: 6px;
-}
-
+/* ==========================================================================
+   9. PAYMENT RECEIPT & VOUCHER STYLES
+   ========================================================================== */
 .payment-receipt-box {
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
-  padding: 24px;
+  padding: clamp(14px, 2.5vw, 24px);
   font-family: 'Inter', sans-serif;
 }
 
 .payment-receipt-header {
   background: linear-gradient(135deg, #0a2540 0%, #1e3a8a 100%);
   color: #ffffff;
-  padding: 20px;
+  padding: clamp(12px, 2vw, 20px);
   border-radius: 8px;
   margin-bottom: 20px;
+}
+
+@media (max-width: 575.98px) {
+  .payment-receipt-header {
+    flex-direction: column;
+    text-align: left;
+    gap: 10px;
+  }
+  .payment-receipt-header .text-end {
+    text-align: left !important;
+  }
 }
 
 .payment-status-badge-lg {
@@ -301,11 +631,13 @@ body {
   font-weight: 600;
 }
 
+/* Print Optimization */
 @media print {
   body * {
     visibility: hidden;
   }
-  #paymentReceiptModal, #paymentReceiptModal * {
+  #paymentReceiptModal,
+  #paymentReceiptModal * {
     visibility: visible;
   }
   #paymentReceiptModal {
@@ -320,3 +652,74 @@ body {
     display: none !important;
   }
 }
+
+/* ==========================================================================
+   10. RESPONSIVE TABS, CHARTS & TOUCH POLISH
+   ========================================================================== */
+/* Swipeable Tab Pills on Mobile */
+.nav-pills {
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* Firefox */
+  padding-bottom: 6px;
+  gap: 6px;
+}
+
+.nav-pills::-webkit-scrollbar {
+  display: none; /* Chrome / Safari */
+}
+
+.nav-pills .nav-item {
+  flex-shrink: 0;
+}
+
+.nav-pills .nav-link {
+  white-space: nowrap;
+  font-size: 0.85rem;
+  padding: 8px 14px;
+  border-radius: 20px;
+}
+
+/* Responsive Chart Wrappers */
+.chart-container-responsive {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  min-height: 250px;
+  max-height: 380px;
+}
+
+canvas {
+  max-width: 100% !important;
+  height: auto !important;
+}
+
+/* Touch Action Manipulation for Fast Taps */
+button,
+a,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
+/* Mobile Toolbar Adaptations */
+@media (max-width: 767.98px) {
+  .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  
+  .btn-group .btn {
+    flex: 1 1 auto;
+    font-size: 0.78rem;
+    padding: 6px 10px;
+  }
+
+  .card {
+    border-radius: 12px !important;
+  }
+}
+
