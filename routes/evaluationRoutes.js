@@ -230,6 +230,24 @@ router.post('/award', verifyToken, requireRole('authority', 'admin', 'evaluator'
       req.ip
     );
 
+    // 4. Automatically initialize contractor payment milestone and assess EMD refund eligibility
+    try {
+      const contractorPaymentService = require('../services/contractorPaymentService');
+      const emdRefundService = require('../services/emdRefundService');
+      await contractorPaymentService.initializeContractPayment({
+        tenderId: parseInt(tender_id, 10),
+        adminUserId: req.user.id,
+        ipAddress: req.ip
+      });
+      await emdRefundService.assessEligibilityForTender({
+        tenderId: parseInt(tender_id, 10),
+        userId: req.user.id,
+        ipAddress: req.ip
+      });
+    } catch (postAwardErr) {
+      console.warn('Post-award payment/refund automation notice:', postAwardErr.message);
+    }
+
     res.json({
       success: true,
       message: `Tender ${tender.tender_code} has been successfully awarded to ${bid.company_name}!`,

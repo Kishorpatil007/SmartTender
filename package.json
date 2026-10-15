@@ -7,8 +7,9 @@
     "start": "node server.js",
     "reset": "node database/seed.js",
     "seed": "node database/seed.js",
-    "test": "node test.js && node test_payments.js",
-    "test:payments": "node test_payments.js"
+    "test": "node test.js && node test_payments.js && node test_financial_modules.js",
+    "test:payments": "node test_payments.js",
+    "test:financial": "node test_financial_modules.js"
   },
   "keywords": [
     "tender-management",

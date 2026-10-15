@@ -532,6 +532,109 @@
             </table>
           </div>
         </div>
+
+        <!-- Module 1: Contractor Payments & Milestone Claims (Institution -> Contractor) -->
+        <div class="card border-0 shadow-sm rounded-4 p-4 mt-4" id="contractor-contracts-section">
+          <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+            <div>
+              <h5 class="fw-bold mb-0">
+                <i class="bi bi-cash-stack text-success me-2"></i>My Awarded Contracts & Work Payment Claims
+              </h5>
+              <small class="text-muted">Track awarded contracts, submit completion milestones & invoices, and review disbursement transactions</small>
+            </div>
+            <div class="d-flex gap-2">
+              <button class="btn btn-sm btn-primary" onclick="openContractorClaimModal()">
+                <i class="bi bi-file-earmark-check me-1"></i> Submit Work Completion / Claim
+              </button>
+              <button class="btn btn-sm btn-outline-primary" onclick="loadContractorAwardedContracts()">
+                <i class="bi bi-arrow-clockwise me-1"></i> Refresh
+              </button>
+            </div>
+          </div>
+
+          <!-- Contractor Contract Metric Cards -->
+          <div class="row g-3 mb-3">
+            <div class="col-md-3">
+              <div class="p-3 bg-light rounded-3 border">
+                <small class="text-muted d-block">Awarded Contracts</small>
+                <h4 id="contractor-contracts-stat-count" class="fw-bold mb-0 text-dark">0</h4>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="p-3 bg-light rounded-3 border">
+                <small class="text-muted d-block">Approved Payable</small>
+                <h4 id="contractor-contracts-stat-approved" class="fw-bold mb-0 text-primary">₹ 0</h4>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="p-3 bg-light rounded-3 border">
+                <small class="text-muted d-block">Total Disbursed to Date</small>
+                <h4 id="contractor-contracts-stat-paid" class="fw-bold mb-0 text-success">₹ 0</h4>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="p-3 bg-light rounded-3 border">
+                <small class="text-muted d-block">Remaining Balance Owed</small>
+                <h4 id="contractor-contracts-stat-remaining" class="fw-bold mb-0 text-warning">₹ 0</h4>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>Tender / Work Order</th>
+                  <th>Contract Value</th>
+                  <th>Work Status</th>
+                  <th>Claim Status</th>
+                  <th>Approved Payable</th>
+                  <th>Disbursed</th>
+                  <th>Remaining</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="contractor-contracts-table-body">
+                <!-- Populated by JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Module 2: EMD Refund Status & Settlement Records (Institution -> Eligible Contractor) -->
+        <div class="card border-0 shadow-sm rounded-4 p-4 mt-4" id="contractor-emd-refunds-section">
+          <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+            <div>
+              <h5 class="fw-bold mb-0">
+                <i class="bi bi-arrow-return-left text-primary me-2"></i>Earnest Money Deposit (EMD) Return & Settlement Records
+              </h5>
+              <small class="text-muted">Real-time settlement status of security deposits for unsuccessful tenders, cancelled notices, or released securities</small>
+            </div>
+            <button class="btn btn-sm btn-outline-primary" onclick="loadContractorEmdRefunds()">
+              <i class="bi bi-arrow-clockwise me-1"></i> Refresh
+            </button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>Receipt #</th>
+                  <th>Tender Notice</th>
+                  <th>Original EMD</th>
+                  <th>Refund Status</th>
+                  <th>Eligibility Reason</th>
+                  <th>Execution Method & Ref</th>
+                  <th>Settlement Date</th>
+                  <th>Advice Slip</th>
+                </tr>
+              </thead>
+              <tbody id="contractor-emd-refunds-table-body">
+                <!-- Populated by JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
       <!-- ======================================================== -->
@@ -806,6 +909,340 @@
           </div>
         </div>
 
+        <!-- Module 1: Admin Contractor Payment Management Desk (Institution -> Contractor) -->
+        <div class="card border-0 shadow-sm rounded-4 p-4 mb-4" id="admin-contractor-payments-section">
+          <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+            <div>
+              <h5 class="fw-bold mb-0">
+                <i class="bi bi-cash-coin text-success me-2"></i>Contractor Payment & Milestone Claims Management Desk
+              </h5>
+              <small class="text-muted">Institution &rarr; Selected Contractor: Work completion inspections, claim approvals, and external bank disbursement recording</small>
+            </div>
+            <div class="d-flex gap-2">
+              <button class="btn btn-sm btn-outline-primary" onclick="loadAdminContractorPaymentDesk()">
+                <i class="bi bi-arrow-clockwise me-1"></i> Refresh Desk
+              </button>
+            </div>
+          </div>
+
+          <!-- Financial KPI Metrics -->
+          <div class="row g-3 mb-4">
+            <div class="col-md-3">
+              <div class="p-3 bg-light rounded-3 border">
+                <small class="text-muted d-block">Approved Payable (Total)</small>
+                <h4 id="admin-cp-stat-approved" class="fw-bold mb-0 text-primary">₹ 0</h4>
+                <small id="admin-cp-stat-contracts-count" class="text-muted">0 Active Contracts</small>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="p-3 bg-light rounded-3 border">
+                <small class="text-muted d-block">Total Disbursed to Date</small>
+                <h4 id="admin-cp-stat-disbursed" class="fw-bold mb-0 text-success">₹ 0</h4>
+                <small id="admin-cp-stat-paid-count" class="text-muted">0 Fully Settled</small>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="p-3 bg-light rounded-3 border">
+                <small class="text-muted d-block">Remaining Institutional Liability</small>
+                <h4 id="admin-cp-stat-remaining" class="fw-bold mb-0 text-warning">₹ 0</h4>
+                <small class="text-muted">Outstanding balance</small>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="p-3 bg-light rounded-3 border">
+                <small class="text-muted d-block">Pending Actions</small>
+                <div class="d-flex align-items-baseline gap-2">
+                  <h4 id="admin-cp-stat-pending-claims" class="fw-bold mb-0 text-danger">0</h4>
+                  <small class="text-muted">Claims awaiting review</small>
+                </div>
+                <small id="admin-cp-stat-pending-inspections" class="text-muted">0 Inspections pending</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Queue Tabs -->
+          <ul class="nav nav-pills mb-3 border-bottom pb-2" id="admin-cp-tabs" role="tablist">
+            <li class="nav-item">
+              <button class="nav-link active btn-sm" id="tab-admin-cp-inspections" data-bs-toggle="pill" data-bs-target="#pane-admin-cp-inspections" type="button">
+                <i class="bi bi-clipboard-check me-1"></i> Pending Inspections (<span id="admin-cp-badge-inspections">0</span>)
+              </button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link btn-sm" id="tab-admin-cp-claims" data-bs-toggle="pill" data-bs-target="#pane-admin-cp-claims" type="button">
+                <i class="bi bi-file-earmark-medical me-1"></i> Claims Awaiting Approval (<span id="admin-cp-badge-claims">0</span>)
+              </button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link btn-sm" id="tab-admin-cp-disburse" data-bs-toggle="pill" data-bs-target="#pane-admin-cp-disburse" type="button">
+                <i class="bi bi-send-check me-1"></i> Awaiting Disbursement (<span id="admin-cp-badge-disburse">0</span>)
+              </button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link btn-sm" id="tab-admin-cp-all" data-bs-toggle="pill" data-bs-target="#pane-admin-cp-all" type="button">
+                <i class="bi bi-journal-text me-1"></i> All Contracts & Disbursements
+              </button>
+            </li>
+          </ul>
+
+          <div class="tab-content" id="admin-cp-tabContent">
+            <!-- 1. Pending Inspections -->
+            <div class="tab-pane fade show active" id="pane-admin-cp-inspections" role="tabpanel">
+              <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Work Order #</th>
+                      <th>Tender</th>
+                      <th>Contractor</th>
+                      <th>Completion Date</th>
+                      <th>Claimed Amount</th>
+                      <th>Evidence Doc</th>
+                      <th>Inspection Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="admin-pending-inspections-table-body">
+                    <!-- Populated by JavaScript -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- 2. Pending Claims Approval -->
+            <div class="tab-pane fade" id="pane-admin-cp-claims" role="tabpanel">
+              <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Work Order #</th>
+                      <th>Tender</th>
+                      <th>Contractor</th>
+                      <th>Invoice Ref</th>
+                      <th>Claimed Amount</th>
+                      <th>Contract Value</th>
+                      <th>Approval Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="admin-pending-claims-table-body">
+                    <!-- Populated by JavaScript -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- 3. Approved Awaiting Disbursement -->
+            <div class="tab-pane fade" id="pane-admin-cp-disburse" role="tabpanel">
+              <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Work Order #</th>
+                      <th>Tender</th>
+                      <th>Contractor</th>
+                      <th>Approved Payable</th>
+                      <th>Disbursed to Date</th>
+                      <th>Remaining Liability</th>
+                      <th>Disbursement Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="admin-approved-disbursements-table-body">
+                    <!-- Populated by JavaScript -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- 4. All Contracts & History -->
+            <div class="tab-pane fade" id="pane-admin-cp-all" role="tabpanel">
+              <div class="d-flex flex-wrap gap-2 mb-3">
+                <input type="text" id="admin-cp-search-input" class="form-control form-control-sm w-auto" placeholder="Search Work Order / Tender / Vendor..." onkeyup="if(event.key==='Enter') loadAdminAllContracts()">
+                <select id="admin-cp-filter-status" class="form-select form-select-sm w-auto" onchange="loadAdminAllContracts()">
+                  <option value="">All Claim Statuses</option>
+                  <option value="draft">Draft</option>
+                  <option value="claim_submitted">Claim Submitted</option>
+                  <option value="approval_pending">Approval Pending</option>
+                  <option value="approved">Approved</option>
+                  <option value="partially_paid">Partially Paid</option>
+                  <option value="fully_paid">Fully Paid & Settled</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+                <button class="btn btn-sm btn-primary" onclick="loadAdminAllContracts()">Apply Filter</button>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Work Order #</th>
+                      <th>Tender</th>
+                      <th>Contractor</th>
+                      <th>Contract Value</th>
+                      <th>Work Status</th>
+                      <th>Claim Status</th>
+                      <th>Disbursed / Approved</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="admin-contractor-payments-all-table-body">
+                    <!-- Populated by JavaScript -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Module 2: Admin EMD Refund Desk (Institution -> Eligible Contractor) -->
+        <div class="card border-0 shadow-sm rounded-4 p-4 mb-4" id="admin-emd-refunds-section">
+          <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+            <div>
+              <h5 class="fw-bold mb-0">
+                <i class="bi bi-arrow-counterclockwise text-primary me-2"></i>Earnest Money Deposit (EMD) Refund Desk
+              </h5>
+              <small class="text-muted">Institution &rarr; Eligible Contractor: Review EMD refund eligibility, approve/forfeit deposits, and execute gateway refunds or external bank transfers</small>
+            </div>
+            <div class="d-flex gap-2">
+              <button class="btn btn-sm btn-primary" onclick="openAssessEmdModal()">
+                <i class="bi bi-shield-check me-1"></i> Assess Tender EMD Eligibility
+              </button>
+              <button class="btn btn-sm btn-outline-primary" onclick="loadAdminEmdRefundDesk()">
+                <i class="bi bi-arrow-clockwise me-1"></i> Refresh Desk
+              </button>
+            </div>
+          </div>
+
+          <!-- Financial KPI Metrics for EMD Refunds -->
+          <div class="row g-3 mb-4">
+            <div class="col-md-3">
+              <div class="p-3 bg-light rounded-3 border">
+                <small class="text-muted d-block">Total EMD Collected</small>
+                <h4 id="admin-emd-stat-collected" class="fw-bold mb-0 text-dark">₹ 0</h4>
+                <small id="admin-emd-stat-collected-count" class="text-muted">0 Deposits</small>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="p-3 bg-light rounded-3 border">
+                <small class="text-muted d-block">Eligible for Refund</small>
+                <h4 id="admin-emd-stat-eligible" class="fw-bold mb-0 text-primary">₹ 0</h4>
+                <small id="admin-emd-stat-eligible-count" class="text-muted">0 Bidders Eligible</small>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="p-3 bg-light rounded-3 border">
+                <small class="text-muted d-block">Refunds Completed</small>
+                <h4 id="admin-emd-stat-completed" class="fw-bold mb-0 text-success">₹ 0</h4>
+                <small id="admin-emd-stat-completed-count" class="text-muted">0 Successfully Refunded</small>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="p-3 bg-light rounded-3 border">
+                <small class="text-muted d-block">EMD Forfeitures</small>
+                <h4 id="admin-emd-stat-forfeited" class="fw-bold mb-0 text-danger">₹ 0</h4>
+                <small id="admin-emd-stat-forfeited-count" class="text-muted">0 Forfeited to MIT</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Refund Queue Tabs -->
+          <ul class="nav nav-pills mb-3 border-bottom pb-2" id="admin-emd-tabs" role="tablist">
+            <li class="nav-item">
+              <button class="nav-link active btn-sm" id="tab-admin-emd-review" data-bs-toggle="pill" data-bs-target="#pane-admin-emd-review" type="button">
+                <i class="bi bi-hourglass-split me-1"></i> Pending Review & Approvals (<span id="admin-emd-badge-review">0</span>)
+              </button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link btn-sm" id="tab-admin-emd-execute" data-bs-toggle="pill" data-bs-target="#pane-admin-emd-execute" type="button">
+                <i class="bi bi-send-check me-1"></i> Approved Awaiting Execution (<span id="admin-emd-badge-execute">0</span>)
+              </button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link btn-sm" id="tab-admin-emd-all" data-bs-toggle="pill" data-bs-target="#pane-admin-emd-all" type="button">
+                <i class="bi bi-journal-check me-1"></i> All Settlements & Forfeitures
+              </button>
+            </li>
+          </ul>
+
+          <div class="tab-content" id="admin-emd-tabContent">
+            <!-- 1. Pending Review & Approval -->
+            <div class="tab-pane fade show active" id="pane-admin-emd-review" role="tabpanel">
+              <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Receipt #</th>
+                      <th>Tender</th>
+                      <th>Contractor</th>
+                      <th>EMD Amount</th>
+                      <th>Eligibility Determination</th>
+                      <th>Assessed Date</th>
+                      <th>Review Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="admin-pending-refunds-table-body">
+                    <!-- Populated by JavaScript -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- 2. Approved Awaiting Execution -->
+            <div class="tab-pane fade" id="pane-admin-emd-execute" role="tabpanel">
+              <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Receipt #</th>
+                      <th>Tender</th>
+                      <th>Contractor</th>
+                      <th>Approved Refund</th>
+                      <th>Original Payment ID</th>
+                      <th>Approved Date</th>
+                      <th>Execution Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="admin-approved-refunds-table-body">
+                    <!-- Populated by JavaScript -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- 3. All Settlements & Forfeitures Audit Log -->
+            <div class="tab-pane fade" id="pane-admin-emd-all" role="tabpanel">
+              <div class="d-flex flex-wrap gap-2 mb-3">
+                <input type="text" id="admin-emd-search-input" class="form-control form-control-sm w-auto" placeholder="Search Receipt / Tender / Vendor / UTR..." onkeyup="if(event.key==='Enter') loadAdminAllEmdRefunds()">
+                <select id="admin-emd-filter-status" class="form-select form-select-sm w-auto" onchange="loadAdminAllEmdRefunds()">
+                  <option value="">All Settlement Statuses</option>
+                  <option value="ELIGIBLE">Refund Eligible</option>
+                  <option value="PENDING_REVIEW">Pending Review</option>
+                  <option value="APPROVED">Approved</option>
+                  <option value="COMPLETED">Completed</option>
+                  <option value="FORFEITED">Forfeited</option>
+                  <option value="REJECTED">Rejected</option>
+                </select>
+                <button class="btn btn-sm btn-primary" onclick="loadAdminAllEmdRefunds()">Apply Filter</button>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Receipt #</th>
+                      <th>Tender</th>
+                      <th>Contractor</th>
+                      <th>Settled Amount</th>
+                      <th>Status</th>
+                      <th>Execution Method & Ref</th>
+                      <th>Processed Date</th>
+                      <th>Official Advice Slip</th>
+                    </tr>
+                  </thead>
+                  <tbody id="admin-emd-refunds-all-table-body">
+                    <!-- Populated by JavaScript -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Audit Trail -->
         <div class="card border-0 shadow-sm rounded-4 p-4">
           <h5 class="fw-bold mb-3"><i class="bi bi-clock-history text-primary me-2"></i>System Audit Trail Log</h5>
@@ -854,6 +1291,129 @@
               <div style="height: 280px;">
                 <canvas id="chart-tender-status"></canvas>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Module 6: Comprehensive Financial Liabilities & Procurement Analytics Report -->
+        <div class="card border-0 shadow-sm rounded-4 p-4 mb-4" id="reports-financial-section">
+          <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+            <div>
+              <h5 class="fw-bold mb-0">
+                <i class="bi bi-graph-up-arrow text-primary me-2"></i>Institutional Financial Liabilities & EMD Settlement Statement
+              </h5>
+              <small class="text-muted">Certified ledger breakdown: Approved contractor obligations, completed disbursements, outstanding liabilities, and EMD reconciliations</small>
+            </div>
+            <button class="btn btn-sm btn-outline-primary" onclick="loadFinancialReport()">
+              <i class="bi bi-arrow-clockwise me-1"></i> Refresh Financial Metrics
+            </button>
+          </div>
+
+          <!-- High-Level Financial Reconciliations Grid -->
+          <div class="row g-3 mb-4">
+            <div class="col-md-3">
+              <div class="p-3 bg-light rounded-3 border">
+                <small class="text-muted d-block">Approved Contractor Payable</small>
+                <h4 id="report-fin-approved-payable" class="fw-bold mb-0 text-primary">₹ 0</h4>
+                <small id="report-fin-awarded-contracts-count" class="text-muted">0 Awarded Contracts</small>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="p-3 bg-light rounded-3 border">
+                <small class="text-muted d-block">Total Payments Completed</small>
+                <h4 id="report-fin-payments-completed" class="fw-bold mb-0 text-success">₹ 0</h4>
+                <small id="report-fin-settled-contracts-count" class="text-muted">0 Fully Settled</small>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="p-3 bg-light rounded-3 border">
+                <small class="text-muted d-block">Remaining Contractor Liabilities</small>
+                <h4 id="report-fin-remaining-liabilities" class="fw-bold mb-0 text-warning">₹ 0</h4>
+                <small class="text-muted">Undisbursed institutional balance</small>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="p-3 bg-light rounded-3 border">
+                <small class="text-muted d-block">Pending Payment Claims</small>
+                <h4 id="report-fin-pending-claims-val" class="fw-bold mb-0 text-danger">₹ 0</h4>
+                <small id="report-fin-pending-claims-count" class="text-muted">0 Claims Awaiting Review</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-4">
+            <div class="col-md-3">
+              <div class="p-3 bg-light rounded-3 border">
+                <small class="text-muted d-block">Total EMD Collected</small>
+                <h4 id="report-fin-emd-collected" class="fw-bold mb-0 text-dark">₹ 0</h4>
+                <small id="report-fin-emd-collected-count" class="text-muted">0 Inbound EMD Deposits</small>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="p-3 bg-light rounded-3 border">
+                <small class="text-muted d-block">Total EMD Eligible for Refund</small>
+                <h4 id="report-fin-emd-eligible" class="fw-bold mb-0 text-primary">₹ 0</h4>
+                <small id="report-fin-emd-eligible-count" class="text-muted">0 Bidders Eligible</small>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="p-3 bg-light rounded-3 border">
+                <small class="text-muted d-block">EMD Refunds Completed</small>
+                <h4 id="report-fin-emd-refunded" class="fw-bold mb-0 text-success">₹ 0</h4>
+                <small id="report-fin-emd-refunded-count" class="text-muted">0 Successfully Returned</small>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="p-3 bg-light rounded-3 border">
+                <small class="text-muted d-block">Total EMD Forfeitures</small>
+                <h4 id="report-fin-emd-forfeited" class="fw-bold mb-0 text-danger">₹ 0</h4>
+                <small id="report-fin-emd-forfeited-count" class="text-muted">0 Deposits Forfeited</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Forfeitures Registry -->
+          <div class="mb-4">
+            <h6 class="fw-bold text-dark mb-2"><i class="bi bi-shield-x text-danger me-1.5"></i>Official EMD Forfeitures Registry (Audit Recorded)</h6>
+            <div class="table-responsive">
+              <table class="table table-sm table-hover align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>Tender</th>
+                    <th>Bidder / Contractor</th>
+                    <th>Forfeited Amount</th>
+                    <th>Forfeiture Date</th>
+                    <th>Mandatory Recorded Reason</th>
+                    <th>Authorized By</th>
+                  </tr>
+                </thead>
+                <tbody id="report-forfeitures-table-body">
+                  <!-- Populated by JavaScript -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Disputed & Failed Transactions Log -->
+          <div>
+            <h6 class="fw-bold text-dark mb-2"><i class="bi bi-exclamation-octagon-fill text-warning me-1.5"></i>Exceptions: Failed & Disputed Transactions Log</h6>
+            <div class="table-responsive">
+              <table class="table table-sm table-hover align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>Reference</th>
+                    <th>Transaction Type</th>
+                    <th>Tender Notice</th>
+                    <th>Party</th>
+                    <th>Amount</th>
+                    <th>Reported Date</th>
+                    <th>Failure / Dispute Reason</th>
+                  </tr>
+                </thead>
+                <tbody id="report-failed-disputed-table-body">
+                  <!-- Populated by JavaScript -->
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -2007,6 +2567,457 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Understood</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Module 1: Contractor Submit Claim Modal -->
+  <div class="modal fade" id="contractorClaimModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="fw-bold mb-0"><i class="bi bi-file-earmark-check text-primary me-2"></i>Submit Work Completion & Payment Claim</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="contractor-claim-form" onsubmit="handleContractorClaimSubmit(event)">
+          <div class="modal-body">
+            <div class="alert alert-info py-2 px-3 small rounded-3 mb-3">
+              <i class="bi bi-info-circle-fill me-1"></i> Submit your official work completion claim and commercial invoice. Institutional users will inspect the work on site before approving payment release.
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold small">Awarded Tender / Contract <span class="text-danger">*</span></label>
+              <select id="claim-tender-select" class="form-select" required onchange="onClaimTenderSelected(this.value)">
+                <option value="">-- Select Awarded Tender --</option>
+              </select>
+            </div>
+
+            <div id="claim-contract-details-box" class="p-3 bg-light rounded-3 mb-3 border d-none">
+              <div class="row g-2 small">
+                <div class="col-6"><strong>Work Order:</strong> <span id="claim-box-wo-ref">-</span></div>
+                <div class="col-6"><strong>Contract Value:</strong> <span id="claim-box-contract-val" class="text-primary fw-bold">-</span></div>
+                <div class="col-6"><strong>Already Disbursed:</strong> <span id="claim-box-paid-val" class="text-success fw-bold">-</span></div>
+                <div class="col-6"><strong>Remaining Liability:</strong> <span id="claim-box-remaining-val" class="text-warning fw-bold">-</span></div>
+              </div>
+            </div>
+
+            <input type="hidden" id="claim-contract-payment-id" name="contractor_payment_id">
+
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold small">Work Completion Date <span class="text-danger">*</span></label>
+                <input type="date" id="claim-completion-date" name="completion_date" class="form-control" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold small">Claimed Amount (INR) <span class="text-danger">*</span></label>
+                <input type="number" step="0.01" min="1" id="claim-amount" name="claimed_amount" class="form-control" placeholder="e.g. 500000" required>
+                <small class="text-muted">Cannot exceed agreed contract value.</small>
+              </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold small">Commercial Invoice / Bill Reference # <span class="text-danger">*</span></label>
+                <input type="text" id="claim-invoice-ref" name="invoice_ref" class="form-control" placeholder="e.g. INV/2026/089" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold small">Invoice Date</label>
+                <input type="date" id="claim-invoice-date" name="invoice_date" class="form-control">
+              </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold small">Work Completion Evidence / Photos <span class="text-danger">*</span></label>
+                <input type="file" id="claim-evidence-file" name="evidence" class="form-control" accept=".pdf,.png,.jpg,.jpeg,.zip" required>
+                <small class="text-muted">Site photographs, completion sign-off, or report (PDF/Images/ZIP)</small>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold small">Official Invoice Document (PDF/Doc)</label>
+                <input type="file" id="claim-invoice-file" name="invoice" class="form-control" accept=".pdf,.doc,.docx">
+                <small class="text-muted">Stamped GST commercial invoice</small>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold small">Work Completion Notes & Remarks</label>
+              <textarea id="claim-remarks" name="remarks" class="form-control" rows="2" placeholder="Summary of scope completed, handover status, warranty details..."></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="btn-submit-claim">
+              <i class="bi bi-send-check me-1"></i> Submit Payment Claim
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Module 1: Contractor / Admin Claim Detail & Progress Modal -->
+  <div class="modal fade" id="contractorClaimDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="fw-bold mb-0"><i class="bi bi-clock-history text-primary me-2"></i>Contract Milestone & Payment Progress</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="claim-detail-modal-body">
+          <!-- Populated by JavaScript -->
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-primary" id="btn-modal-voucher-download">
+            <i class="bi bi-download me-1"></i> Download Disbursement Voucher PDF
+          </button>
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Module 1: Admin Inspect Work Modal -->
+  <div class="modal fade" id="adminInspectWorkModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-clipboard-check text-primary me-2"></i>Inspect Contractor Work Completion</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="admin-inspect-form" onsubmit="handleAdminInspectSubmit(event)">
+          <div class="modal-body">
+            <input type="hidden" id="inspect-payment-id">
+            <div class="p-3 bg-light rounded-3 mb-3 border small">
+              <div><strong>Contractor:</strong> <span id="inspect-contractor-name">-</span></div>
+              <div><strong>Tender:</strong> <span id="inspect-tender-code">-</span></div>
+              <div><strong>Work Order:</strong> <span id="inspect-wo-ref">-</span></div>
+              <div><strong>Evidence Attached:</strong> <span id="inspect-evidence-link">-</span></div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold small">Inspection Committee Decision <span class="text-danger">*</span></label>
+              <div class="d-flex gap-3">
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="inspect_decision" id="inspect-approve" value="approve" checked>
+                  <label class="form-check-label text-success fw-semibold" for="inspect-approve">
+                    <i class="bi bi-check-circle-fill me-1"></i> Work Completion Approved
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="inspect_decision" id="inspect-reject" value="reject">
+                  <label class="form-check-label text-danger fw-semibold" for="inspect-reject">
+                    <i class="bi bi-x-circle-fill me-1"></i> Work Inspection Rejected
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold small">Inspection Observations & Certificate Reference <span class="text-danger">*</span></label>
+              <textarea id="inspect-notes" class="form-control" rows="3" placeholder="Recorded observations, quality audit, measurements verified..." required></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="btn-submit-inspect">
+              <i class="bi bi-check-lg me-1"></i> Submit Inspection Decision
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Module 1: Admin Approve Claim Modal -->
+  <div class="modal fade" id="adminApproveClaimModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-calculator text-primary me-2"></i>Review & Approve Payment Claim</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="admin-approve-claim-form" onsubmit="handleAdminApproveClaimSubmit(event)">
+          <div class="modal-body">
+            <input type="hidden" id="approve-claim-payment-id">
+            <div class="p-3 bg-light rounded-3 mb-3 border small">
+              <div class="row g-2">
+                <div class="col-6"><strong>Contractor:</strong> <span id="approve-claim-contractor">-</span></div>
+                <div class="col-6"><strong>Tender:</strong> <span id="approve-claim-tender">-</span></div>
+                <div class="col-6"><strong>Invoice Ref:</strong> <span id="approve-claim-invoice-ref">-</span></div>
+                <div class="col-6"><strong>Invoice Doc:</strong> <span id="approve-claim-invoice-link">-</span></div>
+                <div class="col-6"><strong>Total Contract Value:</strong> <span id="approve-claim-contract-val" class="text-primary fw-bold">-</span></div>
+                <div class="col-6"><strong>Contractor Claimed Amount:</strong> <span id="approve-claim-claimed-val" class="text-dark fw-bold">-</span></div>
+              </div>
+            </div>
+
+            <div class="alert alert-info py-2 px-3 small rounded-3 mb-3">
+              <i class="bi bi-info-circle-fill me-1"></i> Record statutory deductions, taxes (TDS/GST-TDS), or performance security retention. The server will strictly validate: <code>Approved Payable = Contract Amount - Deductions - Taxes - Retention</code>.
+            </div>
+
+            <div class="row g-3 mb-3">
+              <div class="col-md-4">
+                <label class="form-label fw-semibold small">Approved Deductions / Penalties (INR)</label>
+                <input type="number" step="0.01" min="0" id="approve-deductions" class="form-control" value="0" oninput="recalcApprovedPayable()">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold small">Statutory Taxes (TDS / GST-TDS) (INR)</label>
+                <input type="number" step="0.01" min="0" id="approve-taxes" class="form-control" value="0" oninput="recalcApprovedPayable()">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold small">Retention Amount (Security Retention) (INR)</label>
+                <input type="number" step="0.01" min="0" id="approve-retention" class="form-control" value="0" oninput="recalcApprovedPayable()">
+              </div>
+            </div>
+
+            <div class="p-3 bg-success bg-opacity-10 border border-success rounded-3 mb-3">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <div class="small fw-bold text-success">Net Approved Payable Amount:</div>
+                  <div class="text-muted small">Payable amount authorized for banking disbursement</div>
+                </div>
+                <h3 class="fw-bold text-success mb-0" id="approve-net-payable-display">₹ 0</h3>
+              </div>
+              <input type="hidden" id="approve-net-payable-input">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold small">Administrative Remarks & Approval Notes</label>
+              <textarea id="approve-claim-notes" class="form-control" rows="2" placeholder="Approval justification, reference to Finance Committee sanction..."></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-danger me-auto" onclick="promptRejectClaim()">
+              <i class="bi bi-x-circle me-1"></i> Reject Claim
+            </button>
+            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-success" id="btn-confirm-approve-claim">
+              <i class="bi bi-check2-circle me-1"></i> Approve Claim for Disbursement
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Module 1: Admin Record Payment Disbursement Modal -->
+  <div class="modal fade" id="adminRecordPaymentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-bank text-success me-2"></i>Record External Payment Disbursement</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="admin-record-payment-form" onsubmit="handleAdminRecordPaymentSubmit(event)">
+          <div class="modal-body">
+            <input type="hidden" id="record-pmt-payment-id">
+            <div class="p-3 bg-light rounded-3 mb-3 border small">
+              <div><strong>Contractor:</strong> <span id="record-pmt-contractor">-</span></div>
+              <div><strong>Tender:</strong> <span id="record-pmt-tender">-</span></div>
+              <div><strong>Net Approved Payable:</strong> <span id="record-pmt-approved-val" class="text-primary fw-bold">-</span></div>
+              <div><strong>Total Paid to Date:</strong> <span id="record-pmt-paid-val" class="text-success fw-bold">-</span></div>
+              <div><strong>Remaining Liability:</strong> <span id="record-pmt-remaining-val" class="text-danger fw-bold">-</span></div>
+            </div>
+
+            <div class="alert alert-warning py-2 px-3 small rounded-3 mb-3">
+              <i class="bi bi-shield-exclamation me-1"></i> <strong>Audit Compliance:</strong> Record the details of an externally executed bank transfer (NEFT/RTGS/Cheque). SmartTender records the audit proof and does NOT claim an automated gateway debit.
+            </div>
+
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold small">Disbursement Amount (INR) <span class="text-danger">*</span></label>
+                <input type="number" step="0.01" min="1" id="record-pmt-amount" class="form-control" required>
+                <small class="text-muted">Cannot exceed remaining liability.</small>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold small">Payment Method <span class="text-danger">*</span></label>
+                <select id="record-pmt-method" class="form-select" required>
+                  <option value="neft">NEFT Bank Transfer</option>
+                  <option value="rtgs">RTGS High-Value Transfer</option>
+                  <option value="imps">IMPS Instant Transfer</option>
+                  <option value="cheque">Bank Cheque / Demand Draft</option>
+                  <option value="bank_transfer">Direct Bank Transfer</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold small">Bank UTR / Cheque Ref # <span class="text-danger">*</span></label>
+                <input type="text" id="record-pmt-ref" class="form-control" placeholder="e.g. UTR123456789012" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold small">Disbursement Date <span class="text-danger">*</span></label>
+                <input type="date" id="record-pmt-date" class="form-control" required>
+              </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold small">College Issuing Bank Name</label>
+                <input type="text" id="record-pmt-bank" class="form-control" placeholder="e.g. State Bank of India - MIT Branch">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold small">Vendor A/C Last 4 Digits</label>
+                <input type="text" maxlength="4" id="record-pmt-last4" class="form-control" placeholder="e.g. 4092">
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold small">Bank Receipt / Payment Advice Proof (Optional)</label>
+              <input type="file" id="record-pmt-proof" class="form-control" accept=".pdf,.png,.jpg,.jpeg">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold small">Finance Remarks</label>
+              <textarea id="record-pmt-notes" class="form-control" rows="2" placeholder="Voucher reference, ledger head, approved bill number..."></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-success" id="btn-submit-record-payment">
+              <i class="bi bi-check2-circle me-1"></i> Record & Confirm Disbursement
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Module 2: Admin Assess EMD Modal -->
+  <div class="modal fade" id="adminAssessEmdModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-shield-check text-primary me-2"></i>Assess Tender EMD Refund Eligibility</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="admin-assess-emd-form" onsubmit="handleAdminAssessEmdSubmit(event)">
+          <div class="modal-body">
+            <div class="alert alert-info py-2 px-3 small rounded-3 mb-3">
+              <i class="bi bi-info-circle-fill me-1"></i> Evaluates all bidders who deposited EMD on this tender:
+              <ul class="mb-0 ps-3 mt-1">
+                <li><strong>Awarded Tenders:</strong> Unsuccessful bidders &rarr; <code>ELIGIBLE</code> (100% refundable). Winning contractor &rarr; <code>PENDING_REVIEW</code> (held as performance security).</li>
+                <li><strong>Cancelled Tenders:</strong> All bidders &rarr; <code>ELIGIBLE</code> (100% refundable).</li>
+              </ul>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold small">Select Tender Notice <span class="text-danger">*</span></label>
+              <select id="assess-emd-tender-select" class="form-select" required>
+                <option value="">-- Select Tender --</option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="btn-submit-assess-emd">
+              <i class="bi bi-cpu me-1"></i> Run Eligibility Assessment
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Module 2: Admin Review/Approve/Forfeit Refund Modal -->
+  <div class="modal fade" id="adminReviewRefundModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-arrow-return-left text-primary me-2"></i>Review EMD Refund Request</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="review-refund-id">
+          <div class="p-3 bg-light rounded-3 mb-3 border small">
+            <div><strong>Contractor:</strong> <span id="review-refund-contractor">-</span></div>
+            <div><strong>Tender:</strong> <span id="review-refund-tender">-</span></div>
+            <div><strong>Original EMD Paid:</strong> <span id="review-refund-original-val" class="text-primary fw-bold">-</span></div>
+            <div><strong>Eligibility Determination:</strong> <span id="review-refund-type">-</span></div>
+            <div><strong>Eligibility Notes:</strong> <span id="review-refund-notes" class="text-muted">-</span></div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold small">Approved Refund Amount (INR)</label>
+            <input type="number" step="0.01" min="1" id="review-refund-amount" class="form-control" required>
+            <small class="text-muted">Cannot exceed original captured deposit.</small>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold small">Administrative Remarks</label>
+            <textarea id="review-refund-remarks" class="form-control" rows="2" placeholder="Approval or review notes..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-danger me-auto" onclick="promptForfeitRefund()">
+            <i class="bi bi-shield-x me-1"></i> Forfeit EMD
+          </button>
+          <button type="button" class="btn btn-danger" onclick="promptRejectRefund()">
+            <i class="bi bi-x-circle me-1"></i> Reject
+          </button>
+          <button type="button" class="btn btn-success" onclick="handleAdminApproveRefundSubmit()">
+            <i class="bi bi-check2-circle me-1"></i> Approve Refund
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Module 2: Admin Process Refund Modal (Gateway or External Bank Transfer) -->
+  <div class="modal fade" id="adminProcessRefundModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-send-check text-success me-2"></i>Execute EMD Refund Settlement</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="admin-process-refund-form" onsubmit="handleAdminProcessRefundSubmit(event)">
+          <div class="modal-body">
+            <input type="hidden" id="process-refund-id">
+            <div class="p-3 bg-light rounded-3 mb-3 border small">
+              <div><strong>Contractor:</strong> <span id="process-refund-contractor">-</span></div>
+              <div><strong>Tender:</strong> <span id="process-refund-tender">-</span></div>
+              <div><strong>Refund Amount:</strong> <span id="process-refund-amount-val" class="text-success fw-bold">-</span></div>
+              <div><strong>Original Payment ID:</strong> <span id="process-refund-orig-payment">-</span></div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold small">Settlement Method <span class="text-danger">*</span></label>
+              <select id="process-refund-exec-type" class="form-select" onchange="onRefundExecTypeChanged(this.value)" required>
+                <option value="BANK_TRANSFER">Manual Record: External Bank Transfer (NEFT/RTGS/Cheque)</option>
+                <option value="RAZORPAY_GATEWAY">Automated Razorpay Gateway Refund (Server-Side API)</option>
+              </select>
+            </div>
+
+            <div id="process-refund-bank-fields">
+              <div class="mb-3">
+                <label class="form-label fw-semibold small">Bank UTR / Cheque Reference # <span class="text-danger">*</span></label>
+                <input type="text" id="process-refund-ref" class="form-control" placeholder="e.g. UTR-NEFT-948204820">
+                <small class="text-muted">Unique transaction reference from college bank account.</small>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label fw-semibold small">Bank Name / Details</label>
+                <input type="text" id="process-refund-bank" class="form-control" placeholder="e.g. State Bank of India">
+              </div>
+            </div>
+
+            <div id="process-refund-gateway-notice" class="alert alert-info py-2 px-3 small rounded-3 mb-3 d-none">
+              <i class="bi bi-info-circle-fill me-1"></i> Razorpay API will be called on the server to reverse the payment back to the original source instrument.
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold small">Settlement Notes</label>
+              <textarea id="process-refund-notes" class="form-control" rows="2" placeholder="Refund voucher reference, sanction details..."></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-success" id="btn-submit-process-refund">
+              <i class="bi bi-check2-circle me-1"></i> Complete Refund Settlement
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </div>

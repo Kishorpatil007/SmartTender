@@ -261,6 +261,34 @@ router.put('/:id/publish', verifyToken, requireRole('authority', 'admin'), async
   }
 });
 
+// PUT /api/tenders/:id/cancel (Cancel tender & trigger EMD refund eligibility)
+router.put('/:id/cancel', verifyToken, requireRole('authority', 'admin'), async (req, res) => {
+  try {
+    const tenderId = req.params.id;
+    const { cancellation_reason } = req.body;
+    const tender = await dbHelper.get('SELECT * FROM tenders WHERE id = ?', [tenderId]);
+    if (!tender) return res.status(404).json({ success: false, message: 'Tender not found.' });
+
+    await dbHelper.run("UPDATE tenders SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP WHERE id = ?", [tenderId]);
+    await logAudit(req.user.id, 'TENDER_CANCEL', `Cancelled tender ${tender.tender_code}. Reason: ${cancellation_reason || 'Administrative decision'}`, req.ip);
+
+    try {
+      const emdRefundService = require('../services/emdRefundService');
+      await emdRefundService.assessEligibilityForTender({
+        tenderId: parseInt(tenderId, 10),
+        userId: req.user.id,
+        ipAddress: req.ip
+      });
+    } catch (e) {
+      console.warn('Auto EMD assessment on cancel notice:', e.message);
+    }
+
+    res.json({ success: true, message: `Tender ${tender.tender_code} has been cancelled and bidder EMD deposits marked eligible for refund.` });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 // PUT /api/tenders/:id/close-bidding (Move to under_evaluation)
 router.put('/:id/close-bidding', verifyToken, requireRole('authority', 'admin'), async (req, res) => {
   try {

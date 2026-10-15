@@ -219,6 +219,87 @@ const API = {
         body: JSON.stringify({ reason })
       })
     }
+  },
+
+  // Module 1: Contractor Payment Management (Institution -> Selected Contractor)
+  contractorPayments: {
+    getAll: (tenderId) => API.request(`/contractor-payments${tenderId ? `?tenderId=${tenderId}` : ''}`),
+    getAwardedTenders: () => API.request('/contractor-payments/awarded-tenders'),
+    getById: (id) => API.request(`/contractor-payments/${id}`),
+    getHistory: (id) => API.request(`/contractor-payments/${id}/history`),
+    submitClaim: (formData) => API.request('/contractor-payments/claims', {
+      method: 'POST',
+      body: formData
+    }),
+    getVoucherUrl: (id) => `/api/contractor-payments/${id}/voucher-pdf?token=${API.getToken()}`,
+    admin: {
+      getAll: (queryString = '') => API.request(`/contractor-payments/admin/all${queryString}`),
+      getStats: () => API.request('/contractor-payments/stats'),
+      initialize: (tenderId) => API.request('/contractor-payments/initialize', {
+        method: 'POST',
+        body: JSON.stringify({ tender_id: tenderId })
+      }),
+      updateWorkStatus: (id, status, notes) => API.request(`/contractor-payments/${id}/work-status`, {
+        method: 'POST',
+        body: JSON.stringify({ status, notes })
+      }),
+      inspectWork: (id, approved, inspection_notes) => API.request(`/contractor-payments/${id}/inspect`, {
+        method: 'POST',
+        body: JSON.stringify({ approved, inspection_notes })
+      }),
+      approveClaim: (id, data) => API.request(`/contractor-payments/${id}/approve`, {
+        method: 'POST',
+        body: JSON.stringify(data)
+      }),
+      rejectClaim: (id, reason) => API.request(`/contractor-payments/${id}/reject`, {
+        method: 'POST',
+        body: JSON.stringify({ reason })
+      }),
+      recordPayment: (id, formData) => API.request(`/contractor-payments/${id}/record-payment`, {
+        method: 'POST',
+        body: formData
+      })
+    }
+  },
+
+  // Module 2: EMD Refund Management (Institution -> Eligible Contractor)
+  emdRefunds: {
+    getAll: (tenderId) => API.request(`/emd-refunds${tenderId ? `?tenderId=${tenderId}` : ''}`),
+    getById: (id) => API.request(`/emd-refunds/${id}`),
+    getHistory: (id) => API.request(`/emd-refunds/${id}/history`),
+    getVoucherUrl: (id) => `/api/emd-refunds/${id}/voucher-pdf?token=${API.getToken()}`,
+    admin: {
+      getAll: (queryString = '') => API.request(`/emd-refunds/admin/all${queryString}`),
+      getStats: () => API.request('/emd-refunds/stats'),
+      assessEligibility: (tenderId) => API.request('/emd-refunds/assess-eligibility', {
+        method: 'POST',
+        body: JSON.stringify({ tender_id: tenderId })
+      }),
+      approve: (id, data = {}) => API.request(`/emd-refunds/${id}/approve`, {
+        method: 'POST',
+        body: JSON.stringify(data)
+      }),
+      reject: (id, reason) => API.request(`/emd-refunds/${id}/reject`, {
+        method: 'POST',
+        body: JSON.stringify({ reason })
+      }),
+      forfeit: (id, reason) => API.request(`/emd-refunds/${id}/forfeit`, {
+        method: 'POST',
+        body: JSON.stringify({ reason })
+      }),
+      process: (id, data) => API.request(`/emd-refunds/${id}/process`, {
+        method: 'POST',
+        body: JSON.stringify(data)
+      })
+    }
+  },
+
+  // Reports
+  reports: {
+    getSummary: () => API.request('/reports/summary'),
+    getFinancial: () => API.request('/reports/financial'),
+    getTenderHistory: () => API.request('/reports/tender-history'),
+    getContractorPerformance: () => API.request('/reports/contractor-performance')
   }
 };
 
@@ -278,7 +359,27 @@ const UI = {
       failed: { class: 'badge-cancelled', label: 'Payment Failed' },
       REFUND_PENDING: { class: 'badge-under_evaluation', label: 'Refund Pending' },
       REFUNDED: { class: 'badge-closed', label: 'Refunded' },
-      refunded: { class: 'badge-closed', label: 'Refunded' }
+      refunded: { class: 'badge-closed', label: 'Refunded' },
+      // Contractor Payment: Work Statuses
+      contract_awarded: { class: 'badge-draft', label: 'Contract Awarded' },
+      work_in_progress: { class: 'badge-under_evaluation', label: 'Work In Progress' },
+      completion_submitted: { class: 'badge-published', label: 'Completion Submitted' },
+      inspection_pending: { class: 'badge-under_evaluation', label: 'Inspection Pending' },
+      inspection_approved: { class: 'badge-awarded', label: 'Inspection Approved' },
+      inspection_rejected: { class: 'badge-cancelled', label: 'Inspection Rejected' },
+      disputed: { class: 'badge-cancelled', label: 'Disputed' },
+      // Contractor Payment: Claim Statuses
+      claim_submitted: { class: 'badge-published', label: 'Claim Submitted' },
+      approval_pending: { class: 'badge-under_evaluation', label: 'Approval Pending' },
+      partially_paid: { class: 'badge-under_evaluation', label: 'Partially Paid' },
+      fully_paid: { class: 'badge-awarded', label: 'Fully Paid & Settled' },
+      // EMD Refund Statuses
+      ELIGIBLE: { class: 'badge-published', label: 'Refund Eligible' },
+      PENDING_REVIEW: { class: 'badge-under_evaluation', label: 'Review Pending' },
+      APPROVED: { class: 'badge-awarded', label: 'Refund Approved' },
+      PROCESSING: { class: 'badge-under_evaluation', label: 'Processing' },
+      COMPLETED: { class: 'badge-awarded', label: 'Refund Completed' },
+      FORFEITED: { class: 'badge-cancelled', label: 'Deposit Forfeited' }
     };
 
     const config = statusMap[status] || { class: 'badge-draft', label: status };

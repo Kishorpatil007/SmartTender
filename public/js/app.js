@@ -676,6 +676,8 @@ async function loadContractorView() {
 
     // 3. Load Payment Obligations & History
     await loadContractorPaymentsHistory();
+    await loadContractorAwardedContracts();
+    await loadContractorEmdRefunds();
   } catch (err) {
     console.error('Error loading contractor view:', err);
   }
@@ -1049,6 +1051,12 @@ async function loadAdminView() {
 
     // 4. Procurement Fee & EMD Payment Management
     await loadAdminPaymentManagement();
+
+    // 5. Contractor Payments Desk (Institution -> Contractor)
+    await loadAdminContractorPaymentDesk();
+
+    // 6. EMD Refunds Desk (Institution -> Eligible Contractor)
+    await loadAdminEmdRefundDesk();
   } catch (err) {
     console.error('Error loading admin view:', err);
     UI.showToast('Error loading admin dashboard: ' + err.message, 'error');
@@ -1376,6 +1384,9 @@ async function loadReportsView() {
         `).join('');
       }
     }
+
+    // Financial Liabilities & EMD Reconciliation Report
+    await loadFinancialReport();
   } catch (err) {
     console.error('Error loading reports view:', err);
   }
@@ -2516,4 +2527,1366 @@ window.adminInitiateRefund = async function(paymentId, receiptNo, amount) {
     UI.showToast('Refund failed: ' + err.message, 'error');
   }
 };
+
+// ====================================================
+// MODULE 1: CONTRACTOR PAYMENT MANAGEMENT (FRONTEND)
+// ====================================================
+
+window.contractorContractsCache = [];
+
+/**
+ * Loads awarded contracts and payment status for logged-in contractor
+ */
+window.loadContractorAwardedContracts = async function() {
+  try {
+    const tableBody = document.getElementById('contractor-contracts-table-body');
+    if (!tableBody) return;
+
+    const res = await API.contractorPayments.getMyPayments();
+    const payments = res.payments || [];
+    window.contractorContractsCache = payments;
+
+    let totalApproved = 0;
+    let totalPaid = 0;
+    let totalRemaining = 0;
+
+    payments.forEach(p => {
+      totalApproved += parseFloat(p.approved_payable_amount) || 0;
+      totalPaid += parseFloat(p.total_paid_amount) || 0;
+      totalRemaining += parseFloat(p.remaining_payable_amount) || 0;
+    });
+
+    const elCount = document.getElementById('contractor-contracts-stat-count');
+    const elAppr = document.getElementById('contractor-contracts-stat-approved');
+    const elPaid = document.getElementById('contractor-contracts-stat-paid');
+    const elRem = document.getElementById('contractor-contracts-stat-remaining');
+
+    if (elCount) elCount.textContent = payments.length;
+    if (elAppr) elAppr.textContent = UI.formatCurrency(totalApproved);
+    if (elPaid) elPaid.textContent = UI.formatCurrency(totalPaid);
+    if (elRem) elRem.textContent = UI.formatCurrency(totalRemaining);
+
+    if (payments.length === 0) {
+      tableBody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">No awarded contracts found for your account. Once your submitted bid is awarded, contracts will appear here for milestone submission and claim tracking.</td></tr>';
+      return;
+    }
+
+    tableBody.innerHTML = payments.map(p => `
+      <tr>
+        <td>
+          <strong class="text-primary font-monospace">${p.work_order_ref || 'WO-PENDING'}</strong>
+          <div><code>${p.tender_code}</code> - <span class="text-dark fw-semibold text-truncate d-inline-block" style="max-width: 170px;" title="${p.tender_title}">${p.tender_title}</span></div>
+        </td>
+        <td class="fw-bold">${UI.formatCurrency(p.contract_amount)}</td>
+        <td>${UI.getStatusBadge(p.work_status)}</td>
+        <td>${UI.getStatusBadge(p.claim_status)}</td>
+        <td class="fw-bold text-primary">${UI.formatCurrency(p.approved_payable_amount || 0)}</td>
+        <td class="fw-bold text-success">${UI.formatCurrency(p.total_paid_amount || 0)}</td>
+        <td class="fw-bold text-warning">${UI.formatCurrency(p.remaining_payable_amount || 0)}</td>
+        <td>
+          <div class="btn-group btn-group-sm">
+            <button class="btn btn-outline-primary" onclick="viewContractorClaimDetails(${p.id})" title="View Details & Ledger">
+              <i class="bi bi-eye"></i> Details
+            </button>
+            ${['work_in_progress', 'draft', 'rejected'].includes(p.work_status) || ['draft', 'rejected'].includes(p.claim_status) ? `
+              <button class="btn btn-outline-success" onclick="openContractorClaimModal(${p.id})" title="Submit Work Completion / Claim">
+                <i class="bi bi-file-earmark-check"></i> Submit Claim
+              </button>
+            ` : ''}
+            ${parseFloat(p.total_paid_amount) > 0 ? `
+              <a href="${API.contractorPayments.getPdfUrl(p.id)}" target="_blank" class="btn btn-outline-danger" title="Official Disbursement Voucher PDF">
+                <i class="bi bi-file-earmark-pdf"></i> Voucher
+              </a>
+            ` : ''}
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  } catch (err) {
+    console.error('Error loading contractor awarded contracts:', err);
+  }
+};
+
+/**
+ * Opens Contractor Submit Claim modal
+ */
+window.openContractorClaimModal = function(selectedPaymentId) {
+  const tenderSelect = document.getElementById('claim-tender-select');
+  if (!tenderSelect) return;
+
+  const claimable = (window.contractorContractsCache || []).filter(p =>
+    ['work_in_progress', 'draft', 'rejected'].includes(p.work_status) || ['draft', 'rejected'].includes(p.claim_status)
+  );
+
+  if (claimable.length === 0 && !selectedPaymentId) {
+    UI.showToast('No active awarded contracts currently require work completion or payment claims.', 'info');
+    return;
+  }
+
+  tenderSelect.innerHTML = '<option value="">-- Select Awarded Tender --</option>' +
+    (window.contractorContractsCache || []).map(p => `
+      <option value="${p.id}" ${selectedPaymentId && selectedPaymentId == p.id ? 'selected' : ''}>
+        ${p.work_order_ref || 'WO-#' + p.id} - ${p.tender_code} (${UI.formatCurrency(p.contract_amount)})
+      </option>
+    `).join('');
+
+  if (selectedPaymentId) {
+    onClaimTenderSelected(selectedPaymentId);
+  } else {
+    document.getElementById('claim-contract-details-box')?.classList.add('d-none');
+    document.getElementById('claim-contract-payment-id').value = '';
+  }
+
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('contractorClaimModal')).show();
+};
+
+/**
+ * Handles contractor selecting a tender in claim modal
+ */
+window.onClaimTenderSelected = function(paymentId) {
+  const detailsBox = document.getElementById('claim-contract-details-box');
+  if (!paymentId) {
+    if (detailsBox) detailsBox.classList.add('d-none');
+    document.getElementById('claim-contract-payment-id').value = '';
+    return;
+  }
+
+  const p = (window.contractorContractsCache || []).find(c => c.id == paymentId);
+  if (!p) return;
+
+  document.getElementById('claim-contract-payment-id').value = p.id;
+  document.getElementById('claim-box-wo-ref').textContent = p.work_order_ref || 'WO-#' + p.id;
+  document.getElementById('claim-box-contract-val').textContent = UI.formatCurrency(p.contract_amount);
+  document.getElementById('claim-box-paid-val').textContent = UI.formatCurrency(p.total_paid_amount || 0);
+  document.getElementById('claim-box-remaining-val').textContent = UI.formatCurrency(p.remaining_payable_amount > 0 ? p.remaining_payable_amount : p.contract_amount);
+
+  const amountInput = document.getElementById('claim-amount');
+  if (amountInput && (!amountInput.value || parseFloat(amountInput.value) <= 0)) {
+    amountInput.value = parseFloat(p.remaining_payable_amount) > 0 ? p.remaining_payable_amount : p.contract_amount;
+  }
+
+  if (detailsBox) detailsBox.classList.remove('d-none');
+};
+
+/**
+ * Submits work completion and invoice claim
+ */
+window.handleContractorClaimSubmit = async function(event) {
+  event.preventDefault();
+  const form = event.target;
+  const paymentId = document.getElementById('claim-contract-payment-id').value;
+
+  if (!paymentId) {
+    UI.showToast('Please select an awarded contract first.', 'warning');
+    return;
+  }
+
+  const submitBtn = document.getElementById('btn-submit-claim');
+  if (submitBtn) submitBtn.disabled = true;
+
+  try {
+    const formData = new FormData(form);
+    const res = await API.contractorPayments.submitClaim(formData);
+    UI.showToast(res.message || 'Work completion and payment claim submitted successfully.', 'success');
+    bootstrap.Modal.getInstance(document.getElementById('contractorClaimModal'))?.hide();
+    form.reset();
+    await loadContractorAwardedContracts();
+  } catch (err) {
+    UI.showToast(err.message || 'Failed to submit payment claim.', 'error');
+  } finally {
+    if (submitBtn) submitBtn.disabled = false;
+  }
+};
+
+/**
+ * Views full contractor claim details and disbursement ledger
+ */
+window.viewContractorClaimDetails = async function(paymentId) {
+  try {
+    const res = await API.contractorPayments.getById(paymentId);
+    if (!res.success || !res.payment) return;
+    const p = res.payment;
+    const txs = res.transactions || [];
+    const logs = res.auditLogs || [];
+
+    const bodyEl = document.getElementById('claim-detail-modal-body');
+    if (!bodyEl) return;
+
+    bodyEl.innerHTML = `
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <div class="p-3 bg-light rounded-3 border">
+            <small class="text-muted d-block">Work Order & Tender</small>
+            <h5 class="fw-bold mb-1 text-primary font-monospace">${p.work_order_ref || 'WO-#' + p.id}</h5>
+            <div class="small"><code>${p.tender_code}</code> - <strong>${p.tender_title}</strong></div>
+            <div class="small text-muted mt-1">Awarded to: <strong>${p.contractor_company_name}</strong></div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="p-3 bg-light rounded-3 border">
+            <small class="text-muted d-block">Financial Reconciliation</small>
+            <div class="d-flex justify-content-between small mb-1">
+              <span>Agreed Contract Amount:</span>
+              <strong class="text-dark">${UI.formatCurrency(p.contract_amount)}</strong>
+            </div>
+            <div class="d-flex justify-content-between small mb-1">
+              <span>Approved Payable:</span>
+              <strong class="text-primary">${UI.formatCurrency(p.approved_payable_amount || 0)}</strong>
+            </div>
+            <div class="d-flex justify-content-between small mb-1">
+              <span>Disbursed to Date:</span>
+              <strong class="text-success">${UI.formatCurrency(p.total_paid_amount || 0)}</strong>
+            </div>
+            <div class="d-flex justify-content-between small border-top pt-1">
+              <span>Remaining Liability:</span>
+              <strong class="text-warning">${UI.formatCurrency(p.remaining_payable_amount || 0)}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Current Workflow Status -->
+      <div class="p-3 bg-light rounded-3 border mb-3">
+        <div class="row g-2 align-items-center">
+          <div class="col-md-6">
+            <span class="text-muted small">Work Progress Status:</span>
+            <div class="mt-1">${UI.getStatusBadge(p.work_status)}</div>
+          </div>
+          <div class="col-md-6">
+            <span class="text-muted small">Payment Claim Status:</span>
+            <div class="mt-1">${UI.getStatusBadge(p.claim_status)}</div>
+          </div>
+        </div>
+        ${p.rejection_reason ? `
+          <div class="alert alert-danger py-2 px-3 small rounded-3 mt-2 mb-0">
+            <strong>Rejection / Dispute Reason:</strong> ${p.rejection_reason}
+          </div>
+        ` : ''}
+      </div>
+
+      <!-- Milestone Claims & Evidence -->
+      <div class="card border mb-3">
+        <div class="card-header bg-light py-2">
+          <h6 class="fw-bold mb-0 small"><i class="bi bi-file-earmark-text text-primary me-1"></i>Work Completion & Claim Submission</h6>
+        </div>
+        <div class="card-body small">
+          <div class="row g-2">
+            <div class="col-md-4"><strong>Claimed Amount:</strong> ${p.claimed_amount ? UI.formatCurrency(p.claimed_amount) : '-'}</div>
+            <div class="col-md-4"><strong>Completion Date:</strong> ${p.completion_date ? UI.formatDate(p.completion_date) : '-'}</div>
+            <div class="col-md-4"><strong>Claim Request Date:</strong> ${p.claim_submitted_at ? UI.formatDate(p.claim_submitted_at) : '-'}</div>
+            <div class="col-md-4"><strong>Invoice Ref:</strong> ${p.invoice_ref || '-'}</div>
+            <div class="col-md-4"><strong>Invoice Date:</strong> ${p.invoice_date ? UI.formatDate(p.invoice_date) : '-'}</div>
+            <div class="col-md-4">
+              <strong>Uploaded Documents:</strong><br>
+              ${p.completion_evidence_doc ? `<a href="${p.completion_evidence_doc}" target="_blank" class="badge bg-primary text-decoration-none me-1"><i class="bi bi-paperclip"></i> Evidence Doc</a>` : ''}
+              ${p.invoice_doc ? `<a href="${p.invoice_doc}" target="_blank" class="badge bg-secondary text-decoration-none"><i class="bi bi-receipt"></i> Commercial Invoice</a>` : ''}
+              ${!p.completion_evidence_doc && !p.invoice_doc ? '-' : ''}
+            </div>
+            ${p.claim_remarks ? `<div class="col-12 mt-2"><strong>Contractor Remarks:</strong> ${p.claim_remarks}</div>` : ''}
+          </div>
+        </div>
+      </div>
+
+      <!-- Inspection & Statutory Adjustments -->
+      <div class="card border mb-3">
+        <div class="card-header bg-light py-2">
+          <h6 class="fw-bold mb-0 small"><i class="bi bi-clipboard-check text-success me-1"></i>Inspection & Institutional Approval Breakdown</h6>
+        </div>
+        <div class="card-body small">
+          <div class="row g-2">
+            <div class="col-md-4"><strong>Inspection Cert:</strong> ${p.inspection_certificate_ref || '-'}</div>
+            <div class="col-md-4"><strong>Inspected By:</strong> ${p.inspector_name || '-'}</div>
+            <div class="col-md-4"><strong>Inspected Date:</strong> ${p.inspected_at ? UI.formatDate(p.inspected_at) : '-'}</div>
+            <div class="col-md-4"><strong>Approved By:</strong> ${p.approved_by_name || '-'}</div>
+            <div class="col-md-4"><strong>Approved Date:</strong> ${p.approved_at ? UI.formatDate(p.approved_at) : '-'}</div>
+            <div class="col-md-4"><strong>Deductions / Penalties:</strong> ${UI.formatCurrency(p.deductions_amount || 0)}</div>
+            <div class="col-md-4"><strong>Statutory Taxes (TDS/GST):</strong> ${UI.formatCurrency(p.taxes_amount || 0)}</div>
+            <div class="col-md-4"><strong>Security Retention:</strong> ${UI.formatCurrency(p.retention_amount || 0)}</div>
+            <div class="col-md-4"><strong>Net Payable Sanctioned:</strong> <span class="text-primary fw-bold">${UI.formatCurrency(p.approved_payable_amount || 0)}</span></div>
+            ${p.approval_remarks ? `<div class="col-12 mt-2"><strong>Approval Remarks:</strong> ${p.approval_remarks}</div>` : ''}
+          </div>
+        </div>
+      </div>
+
+      <!-- Bank Disbursement Ledger -->
+      <div class="card border mb-3">
+        <div class="card-header bg-light py-2 d-flex justify-content-between align-items-center">
+          <h6 class="fw-bold mb-0 small"><i class="bi bi-bank text-dark me-1"></i>External Bank Disbursement Records (NEFT/RTGS/Cheque)</h6>
+          <span class="badge bg-success">${txs.length} Disbursements</span>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.85rem;">
+            <thead class="table-light">
+              <tr>
+                <th>Voucher #</th>
+                <th>Method</th>
+                <th>Bank UTR / Ref</th>
+                <th>Amount</th>
+                <th>Disbursed Date</th>
+                <th>Issuing Bank</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${txs.length === 0 ? '<tr><td colspan="7" class="text-center text-muted py-3">No disbursement transactions recorded yet.</td></tr>' :
+                txs.map(t => `
+                  <tr>
+                    <td><strong class="font-monospace text-primary">${t.voucher_no}</strong></td>
+                    <td><span class="badge bg-light text-dark border">${(t.payment_method || 'NEFT').toUpperCase()}</span></td>
+                    <td><code>${t.transaction_reference}</code></td>
+                    <td class="fw-bold text-success">${UI.formatCurrency(t.payment_amount)}</td>
+                    <td>${UI.formatDate(t.payment_date)}</td>
+                    <td>${t.issuing_bank || '-'}</td>
+                    <td><span class="badge bg-success bg-opacity-10 text-success border border-success">CONFIRMED</span></td>
+                  </tr>
+                `).join('')
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Audit History -->
+      <div class="card border">
+        <div class="card-header bg-light py-2">
+          <h6 class="fw-bold mb-0 small"><i class="bi bi-clock-history text-secondary me-1"></i>Milestone Audit Trail</h6>
+        </div>
+        <div class="table-responsive" style="max-height: 160px; overflow-y: auto;">
+          <table class="table table-sm align-middle mb-0" style="font-size: 0.8rem;">
+            <tbody>
+              ${logs.length === 0 ? '<tr><td class="text-muted text-center py-2">No audit records logged.</td></tr>' :
+                logs.map(l => `
+                  <tr>
+                    <td width="130"><span class="badge bg-light text-dark font-monospace border">${l.action}</span></td>
+                    <td>${l.description}</td>
+                    <td width="120" class="text-muted">${l.performed_by_name || 'System'}</td>
+                    <td width="140" class="text-muted">${UI.formatDateTime(l.created_at)}</td>
+                  </tr>
+                `).join('')
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+
+    const dlBtn = document.getElementById('btn-modal-voucher-download');
+    if (dlBtn) {
+      if (parseFloat(p.total_paid_amount) > 0) {
+        dlBtn.classList.remove('d-none');
+        dlBtn.onclick = () => window.open(API.contractorPayments.getPdfUrl(p.id), '_blank');
+      } else {
+        dlBtn.classList.add('d-none');
+      }
+    }
+
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('contractorClaimDetailModal')).show();
+  } catch (err) {
+    UI.showToast('Could not load contract claim details: ' + err.message, 'error');
+  }
+};
+
+// ====================================================
+// MODULE 2: CONTRACTOR EMD REFUND STATUS (FRONTEND)
+// ====================================================
+
+/**
+ * Loads EMD refund records for logged-in contractor
+ */
+window.loadContractorEmdRefunds = async function() {
+  try {
+    const tableBody = document.getElementById('contractor-emd-refunds-table-body');
+    if (!tableBody) return;
+
+    const res = await API.emdRefunds.getMyRefunds();
+    const refunds = res.refunds || [];
+
+    if (refunds.length === 0) {
+      tableBody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">No EMD security deposit return records found. Deposits for closed or cancelled tenders will appear here after committee assessment.</td></tr>';
+      return;
+    }
+
+    tableBody.innerHTML = refunds.map(r => `
+      <tr>
+        <td><strong class="font-monospace text-primary">${r.original_receipt_no || 'EMD-#' + r.id}</strong></td>
+        <td>
+          <code>${r.tender_code}</code>
+          <div class="small text-muted text-truncate" style="max-width: 180px;">${r.tender_title}</div>
+        </td>
+        <td class="fw-bold">${UI.formatCurrency(r.original_emd_amount)}</td>
+        <td>${UI.getStatusBadge(r.refund_status)}</td>
+        <td>
+          <span class="small text-muted">${r.eligibility_reason || r.eligibility_determination || 'Awaiting Assessment'}</span>
+          ${r.forfeiture_reason ? `<div class="badge bg-danger bg-opacity-10 text-danger border border-danger mt-1">Forfeiture: ${r.forfeiture_reason}</div>` : ''}
+        </td>
+        <td>
+          ${r.refund_status === 'COMPLETED' ? `
+            <span class="badge bg-light text-dark font-monospace border">${r.execution_type === 'GATEWAY_API' ? 'Razorpay API' : 'Bank Transfer'}</span>
+            <div class="small font-monospace text-success">${r.gateway_refund_id || r.transaction_reference || 'UTR Confirmed'}</div>
+          ` : '<span class="text-muted small">Pending Execution</span>'}
+        </td>
+        <td class="small text-muted">${r.refund_completed_at ? UI.formatDate(r.refund_completed_at) : (r.approved_at ? UI.formatDate(r.approved_at) : '-')}</td>
+        <td>
+          ${['COMPLETED', 'APPROVED', 'FORFEITED'].includes(r.refund_status) ? `
+            <a href="${API.emdRefunds.getAdvicePdfUrl(r.id)}" target="_blank" class="btn btn-sm btn-outline-danger" title="Download Official EMD Advice Slip PDF">
+              <i class="bi bi-file-earmark-pdf"></i> Advice
+            </a>
+          ` : '<span class="text-muted small">-</span>'}
+        </td>
+      </tr>
+    `).join('');
+  } catch (err) {
+    console.error('Error loading contractor EMD refunds:', err);
+  }
+};
+
+// ====================================================
+// MODULE 1: ADMIN CONTRACTOR PAYMENT DESK (FRONTEND)
+// ====================================================
+
+window.adminContractsCache = [];
+
+/**
+ * Loads Admin Contractor Payment Management Desk
+ */
+window.loadAdminContractorPaymentDesk = async function() {
+  try {
+    const res = await API.contractorPayments.admin.getAll();
+    const payments = res.payments || [];
+    window.adminContractsCache = payments;
+
+    let totalApproved = 0;
+    let totalDisbursed = 0;
+    let totalRemaining = 0;
+    let pendingClaims = 0;
+    let pendingInspections = 0;
+    let fullySettled = 0;
+
+    const inspectionsList = [];
+    const claimsList = [];
+    const disburseList = [];
+
+    payments.forEach(p => {
+      totalApproved += parseFloat(p.approved_payable_amount) || 0;
+      totalDisbursed += parseFloat(p.total_paid_amount) || 0;
+      totalRemaining += parseFloat(p.remaining_payable_amount) || 0;
+
+      if (['completion_submitted', 'evidence_submitted', 'inspection_pending'].includes(p.work_status)) {
+        pendingInspections++;
+        inspectionsList.push(p);
+      }
+
+      if (['claim_submitted', 'approval_pending'].includes(p.claim_status)) {
+        pendingClaims++;
+        claimsList.push(p);
+      }
+
+      if (p.claim_status === 'approved' || (p.claim_status === 'partially_paid' && parseFloat(p.remaining_payable_amount) > 0)) {
+        disburseList.push(p);
+      }
+
+      if (p.claim_status === 'fully_paid') {
+        fullySettled++;
+      }
+    });
+
+    // KPI Cards
+    const elAppr = document.getElementById('admin-cp-stat-approved');
+    const elCount = document.getElementById('admin-cp-stat-contracts-count');
+    const elDisb = document.getElementById('admin-cp-stat-disbursed');
+    const elPaidCount = document.getElementById('admin-cp-stat-paid-count');
+    const elRem = document.getElementById('admin-cp-stat-remaining');
+    const elPendClaims = document.getElementById('admin-cp-stat-pending-claims');
+    const elPendInsp = document.getElementById('admin-cp-stat-pending-inspections');
+
+    if (elAppr) elAppr.textContent = UI.formatCurrency(totalApproved);
+    if (elCount) elCount.textContent = `${payments.length} Active Contracts`;
+    if (elDisb) elDisb.textContent = UI.formatCurrency(totalDisbursed);
+    if (elPaidCount) elPaidCount.textContent = `${fullySettled} Fully Settled`;
+    if (elRem) elRem.textContent = UI.formatCurrency(totalRemaining);
+    if (elPendClaims) elPendClaims.textContent = pendingClaims;
+    if (elPendInsp) elPendInsp.textContent = `${pendingInspections} Inspections pending`;
+
+    // Badges on tabs
+    const bInsp = document.getElementById('admin-cp-badge-inspections');
+    const bClaims = document.getElementById('admin-cp-badge-claims');
+    const bDisb = document.getElementById('admin-cp-badge-disburse');
+
+    if (bInsp) bInsp.textContent = pendingInspections;
+    if (bClaims) bClaims.textContent = pendingClaims;
+    if (bDisb) bDisb.textContent = disburseList.length;
+
+    // Render Tab 1: Inspections
+    const inspTable = document.getElementById('admin-pending-inspections-table-body');
+    if (inspTable) {
+      if (inspectionsList.length === 0) {
+        inspTable.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">No contractor work completions pending inspection.</td></tr>';
+      } else {
+        inspTable.innerHTML = inspectionsList.map(p => `
+          <tr>
+            <td><strong class="font-monospace text-primary">${p.work_order_ref || 'WO-#' + p.id}</strong></td>
+            <td><code>${p.tender_code}</code><div class="small text-muted text-truncate" style="max-width: 170px;">${p.tender_title}</div></td>
+            <td><strong>${p.contractor_company_name}</strong></td>
+            <td>${p.completion_date ? UI.formatDate(p.completion_date) : '-'}</td>
+            <td class="fw-bold">${UI.formatCurrency(p.claimed_amount || p.contract_amount)}</td>
+            <td>
+              ${p.completion_evidence_doc ? `<a href="${p.completion_evidence_doc}" target="_blank" class="btn btn-xs btn-outline-primary"><i class="bi bi-paperclip"></i> Evidence</a>` : '<span class="text-muted small">None</span>'}
+            </td>
+            <td>
+              <button class="btn btn-sm btn-primary" onclick="openInspectWorkModal(${p.id})">
+                <i class="bi bi-clipboard-check me-1"></i> Inspect Work
+              </button>
+            </td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    // Render Tab 2: Claims
+    const claimsTable = document.getElementById('admin-pending-claims-table-body');
+    if (claimsTable) {
+      if (claimsList.length === 0) {
+        claimsTable.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">No contractor claims awaiting administrative sanction.</td></tr>';
+      } else {
+        claimsTable.innerHTML = claimsList.map(p => `
+          <tr>
+            <td><strong class="font-monospace text-primary">${p.work_order_ref || 'WO-#' + p.id}</strong></td>
+            <td><code>${p.tender_code}</code><div class="small text-muted text-truncate" style="max-width: 170px;">${p.tender_title}</div></td>
+            <td><strong>${p.contractor_company_name}</strong></td>
+            <td>
+              <strong>${p.invoice_ref || '-'}</strong>
+              ${p.invoice_doc ? `<div><a href="${p.invoice_doc}" target="_blank" class="small text-primary"><i class="bi bi-file-earmark-pdf"></i> View Invoice</a></div>` : ''}
+            </td>
+            <td class="fw-bold text-success">${UI.formatCurrency(p.claimed_amount || p.contract_amount)}</td>
+            <td class="text-muted">${UI.formatCurrency(p.contract_amount)}</td>
+            <td>
+              <button class="btn btn-sm btn-success" onclick="openApproveClaimModal(${p.id})">
+                <i class="bi bi-calculator me-1"></i> Review & Approve
+              </button>
+            </td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    // Render Tab 3: Disbursements
+    const disburseTable = document.getElementById('admin-approved-disbursements-table-body');
+    if (disburseTable) {
+      if (disburseList.length === 0) {
+        disburseTable.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">No approved claims currently awaiting banking disbursement.</td></tr>';
+      } else {
+        disburseTable.innerHTML = disburseList.map(p => `
+          <tr>
+            <td><strong class="font-monospace text-primary">${p.work_order_ref || 'WO-#' + p.id}</strong></td>
+            <td><code>${p.tender_code}</code><div class="small text-muted text-truncate" style="max-width: 170px;">${p.tender_title}</div></td>
+            <td><strong>${p.contractor_company_name}</strong></td>
+            <td class="fw-bold text-primary">${UI.formatCurrency(p.approved_payable_amount)}</td>
+            <td class="fw-bold text-success">${UI.formatCurrency(p.total_paid_amount || 0)}</td>
+            <td class="fw-bold text-warning">${UI.formatCurrency(p.remaining_payable_amount)}</td>
+            <td>
+              <button class="btn btn-sm btn-outline-success" onclick="openRecordPaymentModal(${p.id})">
+                <i class="bi bi-bank me-1"></i> Disburse Payment
+              </button>
+            </td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    // Tab 4: All Contracts
+    loadAdminAllContracts();
+  } catch (err) {
+    console.error('Error loading admin contractor payment desk:', err);
+  }
+};
+
+/**
+ * Loads all contracts table with search & filter in Admin desk
+ */
+window.loadAdminAllContracts = function() {
+  const table = document.getElementById('admin-contractor-payments-all-table-body');
+  if (!table) return;
+
+  const search = (document.getElementById('admin-cp-search-input')?.value || '').toLowerCase();
+  const statusFilter = document.getElementById('admin-cp-filter-status')?.value || '';
+
+  let filtered = window.adminContractsCache || [];
+
+  if (search) {
+    filtered = filtered.filter(p =>
+      (p.work_order_ref || '').toLowerCase().includes(search) ||
+      (p.tender_code || '').toLowerCase().includes(search) ||
+      (p.tender_title || '').toLowerCase().includes(search) ||
+      (p.contractor_company_name || '').toLowerCase().includes(search)
+    );
+  }
+
+  if (statusFilter) {
+    filtered = filtered.filter(p => p.claim_status === statusFilter);
+  }
+
+  if (filtered.length === 0) {
+    table.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">No contractor payment records match the selected criteria.</td></tr>';
+    return;
+  }
+
+  table.innerHTML = filtered.map(p => `
+    <tr>
+      <td><strong class="font-monospace text-primary">${p.work_order_ref || 'WO-#' + p.id}</strong></td>
+      <td><code>${p.tender_code}</code><div class="small text-muted text-truncate" style="max-width: 170px;">${p.tender_title}</div></td>
+      <td><strong>${p.contractor_company_name}</strong></td>
+      <td class="fw-bold">${UI.formatCurrency(p.contract_amount)}</td>
+      <td>${UI.getStatusBadge(p.work_status)}</td>
+      <td>${UI.getStatusBadge(p.claim_status)}</td>
+      <td>
+        <div><strong class="text-success">${UI.formatCurrency(p.total_paid_amount || 0)}</strong> / <span class="text-primary">${UI.formatCurrency(p.approved_payable_amount || 0)}</span></div>
+        <small class="text-muted">Bal: ${UI.formatCurrency(p.remaining_payable_amount || 0)}</small>
+      </td>
+      <td>
+        <div class="btn-group btn-group-sm">
+          <button class="btn btn-outline-primary" onclick="viewContractorClaimDetails(${p.id})" title="View Details">
+            <i class="bi bi-eye"></i>
+          </button>
+          ${parseFloat(p.total_paid_amount) > 0 ? `
+            <a href="${API.contractorPayments.getPdfUrl(p.id)}" target="_blank" class="btn btn-outline-danger" title="Download Voucher PDF">
+              <i class="bi bi-file-earmark-pdf"></i>
+            </a>
+          ` : ''}
+          ${['approved', 'partially_paid'].includes(p.claim_status) && parseFloat(p.remaining_payable_amount) > 0 ? `
+            <button class="btn btn-outline-success" onclick="openRecordPaymentModal(${p.id})" title="Disburse Payment">
+              <i class="bi bi-bank"></i>
+            </button>
+          ` : ''}
+        </div>
+      </td>
+    </tr>
+  `).join('');
+};
+
+/**
+ * Opens Admin Inspect Work Modal
+ */
+window.openInspectWorkModal = function(paymentId) {
+  const p = (window.adminContractsCache || []).find(c => c.id == paymentId);
+  if (!p) return;
+
+  document.getElementById('inspect-payment-id').value = p.id;
+  document.getElementById('inspect-contractor-name').textContent = p.contractor_company_name;
+  document.getElementById('inspect-tender-code').textContent = `${p.tender_code} - ${p.tender_title}`;
+  document.getElementById('inspect-wo-ref').textContent = p.work_order_ref || 'WO-#' + p.id;
+
+  const evEl = document.getElementById('inspect-evidence-link');
+  if (evEl) {
+    evEl.innerHTML = p.completion_evidence_doc ?
+      `<a href="${p.completion_evidence_doc}" target="_blank" class="badge bg-primary text-decoration-none"><i class="bi bi-paperclip"></i> View Attached Work Evidence</a>` :
+      '<span class="text-muted">No evidence document attached</span>';
+  }
+
+  document.getElementById('inspect-notes').value = '';
+  document.getElementById('inspect-approve').checked = true;
+
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('adminInspectWorkModal')).show();
+};
+
+/**
+ * Handles submission of work inspection
+ */
+window.handleAdminInspectSubmit = async function(event) {
+  event.preventDefault();
+  const paymentId = document.getElementById('inspect-payment-id').value;
+  const decision = document.querySelector('input[name="inspect_decision"]:checked')?.value || 'approve';
+  const notes = document.getElementById('inspect-notes').value.trim();
+
+  const btn = document.getElementById('btn-submit-inspect');
+  if (btn) btn.disabled = true;
+
+  try {
+    const res = await API.contractorPayments.admin.inspectWork(paymentId, {
+      decision,
+      inspection_certificate_ref: notes,
+      remarks: notes
+    });
+    UI.showToast(res.message, 'success');
+    bootstrap.Modal.getInstance(document.getElementById('adminInspectWorkModal'))?.hide();
+    await loadAdminContractorPaymentDesk();
+  } catch (err) {
+    UI.showToast(err.message || 'Inspection recording failed.', 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+};
+
+/**
+ * Opens Admin Approve Claim Modal
+ */
+window.openApproveClaimModal = function(paymentId) {
+  const p = (window.adminContractsCache || []).find(c => c.id == paymentId);
+  if (!p) return;
+
+  document.getElementById('approve-claim-payment-id').value = p.id;
+  document.getElementById('approve-claim-contractor').textContent = p.contractor_company_name;
+  document.getElementById('approve-claim-tender').textContent = `${p.tender_code} - ${p.tender_title}`;
+  document.getElementById('approve-claim-invoice-ref').textContent = p.invoice_ref || '-';
+
+  const invLink = document.getElementById('approve-claim-invoice-link');
+  if (invLink) {
+    invLink.innerHTML = p.invoice_doc ?
+      `<a href="${p.invoice_doc}" target="_blank" class="badge bg-secondary text-decoration-none"><i class="bi bi-receipt"></i> Stamped Invoice</a>` :
+      '<span class="text-muted">None attached</span>';
+  }
+
+  document.getElementById('approve-claim-contract-val').textContent = UI.formatCurrency(p.contract_amount);
+  document.getElementById('approve-claim-claimed-val').textContent = UI.formatCurrency(p.claimed_amount || p.contract_amount);
+
+  document.getElementById('approve-deductions').value = '0';
+  document.getElementById('approve-taxes').value = '0';
+  document.getElementById('approve-retention').value = '0';
+  document.getElementById('approve-claim-notes').value = '';
+
+  recalcApprovedPayable();
+
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('adminApproveClaimModal')).show();
+};
+
+/**
+ * Recalculates net approved payable in claim modal
+ */
+window.recalcApprovedPayable = function() {
+  const paymentId = document.getElementById('approve-claim-payment-id').value;
+  const p = (window.adminContractsCache || []).find(c => c.id == paymentId);
+  if (!p) return;
+
+  const base = parseFloat(p.claimed_amount || p.contract_amount) || 0;
+  const deductions = parseFloat(document.getElementById('approve-deductions')?.value) || 0;
+  const taxes = parseFloat(document.getElementById('approve-taxes')?.value) || 0;
+  const retention = parseFloat(document.getElementById('approve-retention')?.value) || 0;
+
+  const net = Math.max(0, base - deductions - taxes - retention);
+
+  document.getElementById('approve-net-payable-display').textContent = UI.formatCurrency(net);
+  document.getElementById('approve-net-payable-input').value = net.toFixed(2);
+};
+
+/**
+ * Handles Admin Claim Approval submission
+ */
+window.handleAdminApproveClaimSubmit = async function(event) {
+  event.preventDefault();
+  const paymentId = document.getElementById('approve-claim-payment-id').value;
+  const approvedAmount = parseFloat(document.getElementById('approve-net-payable-input').value);
+  const deductions = parseFloat(document.getElementById('approve-deductions').value) || 0;
+  const taxes = parseFloat(document.getElementById('approve-taxes').value) || 0;
+  const retention = parseFloat(document.getElementById('approve-retention').value) || 0;
+  const remarks = document.getElementById('approve-claim-notes').value.trim();
+
+  const btn = document.getElementById('btn-confirm-approve-claim');
+  if (btn) btn.disabled = true;
+
+  try {
+    const res = await API.contractorPayments.admin.approveClaim(paymentId, {
+      approved_payable_amount: approvedAmount,
+      deductions_amount: deductions,
+      taxes_amount: taxes,
+      retention_amount: retention,
+      remarks
+    });
+    UI.showToast(res.message, 'success');
+    bootstrap.Modal.getInstance(document.getElementById('adminApproveClaimModal'))?.hide();
+    await loadAdminContractorPaymentDesk();
+  } catch (err) {
+    UI.showToast(err.message || 'Claim approval failed.', 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+};
+
+/**
+ * Rejects contractor payment claim with mandatory reason
+ */
+window.promptRejectClaim = async function() {
+  const paymentId = document.getElementById('approve-claim-payment-id').value;
+  const reason = prompt('Enter official institutional rejection reason for this payment claim:');
+  if (!reason || !reason.trim()) {
+    alert('Rejection reason is mandatory.');
+    return;
+  }
+
+  try {
+    const res = await API.contractorPayments.admin.rejectClaim(paymentId, reason.trim());
+    UI.showToast(res.message, 'success');
+    bootstrap.Modal.getInstance(document.getElementById('adminApproveClaimModal'))?.hide();
+    await loadAdminContractorPaymentDesk();
+  } catch (err) {
+    UI.showToast(err.message || 'Claim rejection failed.', 'error');
+  }
+};
+
+/**
+ * Opens Admin Record Payment Disbursement Modal
+ */
+window.openRecordPaymentModal = function(paymentId) {
+  const p = (window.adminContractsCache || []).find(c => c.id == paymentId);
+  if (!p) return;
+
+  document.getElementById('record-pmt-payment-id').value = p.id;
+  document.getElementById('record-pmt-contractor').textContent = p.contractor_company_name;
+  document.getElementById('record-pmt-tender').textContent = `${p.tender_code} - ${p.tender_title}`;
+  document.getElementById('record-pmt-approved-val').textContent = UI.formatCurrency(p.approved_payable_amount);
+  document.getElementById('record-pmt-paid-val').textContent = UI.formatCurrency(p.total_paid_amount || 0);
+  document.getElementById('record-pmt-remaining-val').textContent = UI.formatCurrency(p.remaining_payable_amount);
+
+  const amountInput = document.getElementById('record-pmt-amount');
+  if (amountInput) {
+    amountInput.value = p.remaining_payable_amount;
+    amountInput.max = p.remaining_payable_amount;
+  }
+
+  document.getElementById('record-pmt-ref').value = '';
+  document.getElementById('record-pmt-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('record-pmt-bank').value = 'State Bank of India - MIT Branch';
+  document.getElementById('record-pmt-notes').value = '';
+
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('adminRecordPaymentModal')).show();
+};
+
+/**
+ * Handles recording external bank payment disbursement
+ */
+window.handleAdminRecordPaymentSubmit = async function(event) {
+  event.preventDefault();
+  const paymentId = document.getElementById('record-pmt-payment-id').value;
+  const form = event.target;
+
+  const btn = document.getElementById('btn-submit-record-payment');
+  if (btn) btn.disabled = true;
+
+  try {
+    const formData = new FormData();
+    formData.append('payment_amount', document.getElementById('record-pmt-amount').value);
+    formData.append('payment_method', document.getElementById('record-pmt-method').value);
+    formData.append('transaction_reference', document.getElementById('record-pmt-ref').value);
+    formData.append('payment_date', document.getElementById('record-pmt-date').value);
+    formData.append('issuing_bank', document.getElementById('record-pmt-bank').value);
+    formData.append('vendor_account_last4', document.getElementById('record-pmt-last4').value);
+    formData.append('remarks', document.getElementById('record-pmt-notes').value);
+
+    const proofFile = document.getElementById('record-pmt-proof')?.files[0];
+    if (proofFile) formData.append('proof', proofFile);
+
+    const res = await API.contractorPayments.admin.recordPayment(paymentId, formData);
+    UI.showToast(res.message, 'success');
+    bootstrap.Modal.getInstance(document.getElementById('adminRecordPaymentModal'))?.hide();
+    form.reset();
+    await loadAdminContractorPaymentDesk();
+  } catch (err) {
+    UI.showToast(err.message || 'Payment recording failed.', 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+};
+
+// ====================================================
+// MODULE 2: ADMIN EMD REFUND DESK (FRONTEND)
+// ====================================================
+
+window.adminEmdCache = [];
+
+/**
+ * Loads Admin EMD Refund Desk
+ */
+window.loadAdminEmdRefundDesk = async function() {
+  try {
+    const res = await API.emdRefunds.admin.getAll();
+    const refunds = res.refunds || [];
+    window.adminEmdCache = refunds;
+
+    let totalCollected = 0;
+    let totalEligible = 0;
+    let totalCompleted = 0;
+    let totalForfeited = 0;
+
+    let eligibleCount = 0;
+    let completedCount = 0;
+    let forfeitedCount = 0;
+
+    const reviewList = [];
+    const executeList = [];
+
+    refunds.forEach(r => {
+      totalCollected += parseFloat(r.original_emd_amount) || 0;
+
+      if (['ELIGIBLE', 'PENDING_REVIEW'].includes(r.refund_status)) {
+        reviewList.push(r);
+        totalEligible += parseFloat(r.refund_eligible_amount || r.original_emd_amount) || 0;
+        eligibleCount++;
+      } else if (r.refund_status === 'APPROVED') {
+        executeList.push(r);
+        totalEligible += parseFloat(r.refund_amount) || 0;
+        eligibleCount++;
+      } else if (r.refund_status === 'COMPLETED') {
+        totalCompleted += parseFloat(r.refund_amount) || 0;
+        completedCount++;
+      } else if (r.refund_status === 'FORFEITED') {
+        totalForfeited += parseFloat(r.original_emd_amount) || 0;
+        forfeitedCount++;
+      }
+    });
+
+    // KPI Cards
+    const elColl = document.getElementById('admin-emd-stat-collected');
+    const elCollCount = document.getElementById('admin-emd-stat-collected-count');
+    const elElig = document.getElementById('admin-emd-stat-eligible');
+    const elEligCount = document.getElementById('admin-emd-stat-eligible-count');
+    const elComp = document.getElementById('admin-emd-stat-completed');
+    const elCompCount = document.getElementById('admin-emd-stat-completed-count');
+    const elForf = document.getElementById('admin-emd-stat-forfeited');
+    const elForfCount = document.getElementById('admin-emd-stat-forfeited-count');
+
+    if (elColl) elColl.textContent = UI.formatCurrency(totalCollected);
+    if (elCollCount) elCollCount.textContent = `${refunds.length} Total Deposits`;
+    if (elElig) elElig.textContent = UI.formatCurrency(totalEligible);
+    if (elEligCount) elEligCount.textContent = `${eligibleCount} Bidders Eligible`;
+    if (elComp) elComp.textContent = UI.formatCurrency(totalCompleted);
+    if (elCompCount) elCompCount.textContent = `${completedCount} Successfully Returned`;
+    if (elForf) elForf.textContent = UI.formatCurrency(totalForfeited);
+    if (elForfCount) elForfCount.textContent = `${forfeitedCount} Forfeited to MIT`;
+
+    // Badges
+    const bRev = document.getElementById('admin-emd-badge-review');
+    const bExec = document.getElementById('admin-emd-badge-execute');
+    if (bRev) bRev.textContent = reviewList.length;
+    if (bExec) bExec.textContent = executeList.length;
+
+    // Tab 1: Pending Review
+    const revTable = document.getElementById('admin-pending-refunds-table-body');
+    if (revTable) {
+      if (reviewList.length === 0) {
+        revTable.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">No EMD deposits currently pending review. Click "Assess Tender EMD Eligibility" above to evaluate closed tenders.</td></tr>';
+      } else {
+        revTable.innerHTML = reviewList.map(r => `
+          <tr>
+            <td><strong class="font-monospace text-primary">${r.original_receipt_no || 'EMD-#' + r.id}</strong></td>
+            <td><code>${r.tender_code}</code><div class="small text-muted text-truncate" style="max-width: 170px;">${r.tender_title}</div></td>
+            <td><strong>${r.company_name}</strong></td>
+            <td class="fw-bold">${UI.formatCurrency(r.original_emd_amount)}</td>
+            <td><span class="badge bg-info text-dark">${r.eligibility_determination || 'Awaiting Review'}</span></td>
+            <td class="small text-muted">${r.eligibility_assessed_at ? UI.formatDate(r.eligibility_assessed_at) : '-'}</td>
+            <td>
+              <button class="btn btn-sm btn-primary" onclick="openReviewRefundModal(${r.id})">
+                <i class="bi bi-arrow-return-left me-1"></i> Review Request
+              </button>
+            </td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    // Tab 2: Awaiting Execution
+    const execTable = document.getElementById('admin-approved-refunds-table-body');
+    if (execTable) {
+      if (executeList.length === 0) {
+        execTable.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">No approved refunds awaiting banking execution.</td></tr>';
+      } else {
+        execTable.innerHTML = executeList.map(r => `
+          <tr>
+            <td><strong class="font-monospace text-primary">${r.original_receipt_no || 'EMD-#' + r.id}</strong></td>
+            <td><code>${r.tender_code}</code><div class="small text-muted text-truncate" style="max-width: 170px;">${r.tender_title}</div></td>
+            <td><strong>${r.company_name}</strong></td>
+            <td class="fw-bold text-success">${UI.formatCurrency(r.refund_amount)}</td>
+            <td><code>${r.provider_payment_id || 'EXTERNAL'}</code></td>
+            <td class="small text-muted">${r.approved_at ? UI.formatDate(r.approved_at) : '-'}</td>
+            <td>
+              <button class="btn btn-sm btn-success" onclick="openProcessRefundModal(${r.id})">
+                <i class="bi bi-send-check me-1"></i> Execute Refund
+              </button>
+            </td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    // Tab 3: All Settlements & Forfeitures
+    loadAdminAllEmdRefunds();
+  } catch (err) {
+    console.error('Error loading admin EMD refund desk:', err);
+  }
+};
+
+/**
+ * Loads all EMD settlements with filter and search
+ */
+window.loadAdminAllEmdRefunds = function() {
+  const table = document.getElementById('admin-emd-refunds-all-table-body');
+  if (!table) return;
+
+  const search = (document.getElementById('admin-emd-search-input')?.value || '').toLowerCase();
+  const statusFilter = document.getElementById('admin-emd-filter-status')?.value || '';
+
+  let filtered = window.adminEmdCache || [];
+
+  if (search) {
+    filtered = filtered.filter(r =>
+      (r.original_receipt_no || '').toLowerCase().includes(search) ||
+      (r.tender_code || '').toLowerCase().includes(search) ||
+      (r.tender_title || '').toLowerCase().includes(search) ||
+      (r.company_name || '').toLowerCase().includes(search) ||
+      (r.transaction_reference || '').toLowerCase().includes(search)
+    );
+  }
+
+  if (statusFilter) {
+    filtered = filtered.filter(r => r.refund_status === statusFilter);
+  }
+
+  if (filtered.length === 0) {
+    table.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">No EMD records match the selected criteria.</td></tr>';
+    return;
+  }
+
+  table.innerHTML = filtered.map(r => `
+    <tr>
+      <td><strong class="font-monospace text-primary">${r.original_receipt_no || 'EMD-#' + r.id}</strong></td>
+      <td><code>${r.tender_code}</code><div class="small text-muted text-truncate" style="max-width: 170px;">${r.tender_title}</div></td>
+      <td><strong>${r.company_name}</strong></td>
+      <td class="fw-bold">${UI.formatCurrency(r.refund_amount || r.original_emd_amount)}</td>
+      <td>${UI.getStatusBadge(r.refund_status)}</td>
+      <td>
+        ${r.refund_status === 'COMPLETED' ? `
+          <span class="badge bg-light text-dark font-monospace border">${r.execution_type === 'GATEWAY_API' ? 'Razorpay API' : 'Bank UTR'}</span>
+          <div class="small font-monospace text-success">${r.gateway_refund_id || r.transaction_reference || 'Confirmed'}</div>
+        ` : (r.forfeiture_reason ? `<span class="badge bg-danger bg-opacity-10 text-danger border border-danger">Forfeited: ${r.forfeiture_reason}</span>` : '<span class="text-muted small">-</span>')}
+      </td>
+      <td class="small text-muted">${r.refund_completed_at ? UI.formatDate(r.refund_completed_at) : (r.updated_at ? UI.formatDate(r.updated_at) : '-')}</td>
+      <td>
+        ${['COMPLETED', 'APPROVED', 'FORFEITED'].includes(r.refund_status) ? `
+          <a href="${API.emdRefunds.getAdvicePdfUrl(r.id)}" target="_blank" class="btn btn-sm btn-outline-danger" title="Download Official Advice Slip PDF">
+            <i class="bi bi-file-earmark-pdf"></i> Advice
+          </a>
+        ` : '<span class="text-muted small">-</span>'}
+      </td>
+    </tr>
+  `).join('');
+};
+
+/**
+ * Opens Assess EMD Modal
+ */
+window.openAssessEmdModal = async function() {
+  const select = document.getElementById('assess-emd-tender-select');
+  if (!select) return;
+
+  try {
+    const res = await API.tenders.getAll();
+    const tenders = (res.tenders || []).filter(t => ['awarded', 'closed', 'cancelled', 'under_evaluation'].includes(t.status));
+
+    select.innerHTML = '<option value="">-- Select Tender --</option>' +
+      tenders.map(t => `
+        <option value="${t.id}">${t.tender_code} - ${t.title} (${t.status.toUpperCase()})</option>
+      `).join('');
+
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('adminAssessEmdModal')).show();
+  } catch (err) {
+    UI.showToast('Could not load tenders: ' + err.message, 'error');
+  }
+};
+
+/**
+ * Handles running eligibility assessment
+ */
+window.handleAdminAssessEmdSubmit = async function(event) {
+  event.preventDefault();
+  const tenderId = document.getElementById('assess-emd-tender-select').value;
+  if (!tenderId) return;
+
+  const btn = document.getElementById('btn-submit-assess-emd');
+  if (btn) btn.disabled = true;
+
+  try {
+    const res = await API.emdRefunds.admin.assessEligibility(tenderId);
+    UI.showToast(res.message, 'success');
+    bootstrap.Modal.getInstance(document.getElementById('adminAssessEmdModal'))?.hide();
+    await loadAdminEmdRefundDesk();
+  } catch (err) {
+    UI.showToast(err.message || 'Assessment failed.', 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+};
+
+/**
+ * Opens Review Refund Modal
+ */
+window.openReviewRefundModal = function(refundId) {
+  const r = (window.adminEmdCache || []).find(x => x.id == refundId);
+  if (!r) return;
+
+  document.getElementById('review-refund-id').value = r.id;
+  document.getElementById('review-refund-contractor').textContent = r.company_name;
+  document.getElementById('review-refund-tender').textContent = `${r.tender_code} - ${r.tender_title}`;
+  document.getElementById('review-refund-original-val').textContent = UI.formatCurrency(r.original_emd_amount);
+  document.getElementById('review-refund-type').textContent = r.eligibility_determination || 'Unsuccessful Bidder';
+  document.getElementById('review-refund-notes').textContent = r.eligibility_reason || 'Eligible for 100% refund.';
+
+  const amtInput = document.getElementById('review-refund-amount');
+  if (amtInput) {
+    const defaultAmt = parseFloat(r.refund_eligible_amount) > 0 ? r.refund_eligible_amount : r.original_emd_amount;
+    amtInput.value = defaultAmt;
+    amtInput.max = r.original_emd_amount;
+  }
+
+  document.getElementById('review-refund-remarks').value = '';
+
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('adminReviewRefundModal')).show();
+};
+
+/**
+ * Handles approving EMD refund
+ */
+window.handleAdminApproveRefundSubmit = async function() {
+  const refundId = document.getElementById('review-refund-id').value;
+  const approvedAmount = parseFloat(document.getElementById('review-refund-amount').value);
+  const remarks = document.getElementById('review-refund-remarks').value.trim();
+
+  try {
+    const res = await API.emdRefunds.admin.approve(refundId, {
+      approved_amount: approvedAmount,
+      remarks
+    });
+    UI.showToast(res.message, 'success');
+    bootstrap.Modal.getInstance(document.getElementById('adminReviewRefundModal'))?.hide();
+    await loadAdminEmdRefundDesk();
+  } catch (err) {
+    UI.showToast(err.message || 'Approval failed.', 'error');
+  }
+};
+
+/**
+ * Prompts rejection of EMD refund with reason
+ */
+window.promptRejectRefund = async function() {
+  const refundId = document.getElementById('review-refund-id').value;
+  const reason = prompt('Enter administrative reason for rejecting this EMD refund request:');
+  if (!reason || !reason.trim()) {
+    alert('Rejection reason is mandatory.');
+    return;
+  }
+
+  try {
+    const res = await API.emdRefunds.admin.reject(refundId, reason.trim());
+    UI.showToast(res.message, 'success');
+    bootstrap.Modal.getInstance(document.getElementById('adminReviewRefundModal'))?.hide();
+    await loadAdminEmdRefundDesk();
+  } catch (err) {
+    UI.showToast(err.message || 'Rejection failed.', 'error');
+  }
+};
+
+/**
+ * Prompts forfeiture of EMD deposit with mandatory reason
+ */
+window.promptForfeitRefund = async function() {
+  const refundId = document.getElementById('review-refund-id').value;
+  const reason = prompt('CONFIRM EMD FORFEITURE\n\nEnter official tender clause & justification for forfeiting this deposit:');
+  if (!reason || !reason.trim()) {
+    alert('Forfeiture reason is mandatory by statutory audit rules.');
+    return;
+  }
+
+  try {
+    const res = await API.emdRefunds.admin.forfeit(refundId, reason.trim());
+    UI.showToast(res.message, 'success');
+    bootstrap.Modal.getInstance(document.getElementById('adminReviewRefundModal'))?.hide();
+    await loadAdminEmdRefundDesk();
+  } catch (err) {
+    UI.showToast(err.message || 'Forfeiture recording failed.', 'error');
+  }
+};
+
+/**
+ * Opens Admin Process Refund Modal
+ */
+window.openProcessRefundModal = function(refundId) {
+  const r = (window.adminEmdCache || []).find(x => x.id == refundId);
+  if (!r) return;
+
+  document.getElementById('process-refund-id').value = r.id;
+  document.getElementById('process-refund-contractor').textContent = r.company_name;
+  document.getElementById('process-refund-tender').textContent = `${r.tender_code} - ${r.tender_title}`;
+  document.getElementById('process-refund-amount-val').textContent = UI.formatCurrency(r.refund_amount);
+  document.getElementById('process-refund-orig-payment').textContent = r.provider_payment_id || 'Offline / Bank Transfer';
+
+  const execSelect = document.getElementById('process-refund-exec-type');
+  if (execSelect) {
+    execSelect.value = 'BANK_TRANSFER';
+    onRefundExecTypeChanged('BANK_TRANSFER');
+  }
+
+  document.getElementById('process-refund-ref').value = '';
+  document.getElementById('process-refund-bank').value = 'State Bank of India - MIT Branch';
+  document.getElementById('process-refund-notes').value = '';
+
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('adminProcessRefundModal')).show();
+};
+
+/**
+ * Toggles gateway vs bank fields in refund process modal
+ */
+window.onRefundExecTypeChanged = function(execType) {
+  const bankFields = document.getElementById('process-refund-bank-fields');
+  const gatewayNotice = document.getElementById('process-refund-gateway-notice');
+  const refInput = document.getElementById('process-refund-ref');
+
+  if (execType === 'RAZORPAY_GATEWAY') {
+    if (bankFields) bankFields.classList.add('d-none');
+    if (gatewayNotice) gatewayNotice.classList.remove('d-none');
+    if (refInput) refInput.required = false;
+  } else {
+    if (bankFields) bankFields.classList.remove('d-none');
+    if (gatewayNotice) gatewayNotice.classList.add('d-none');
+    if (refInput) refInput.required = true;
+  }
+};
+
+/**
+ * Submits refund execution
+ */
+window.handleAdminProcessRefundSubmit = async function(event) {
+  event.preventDefault();
+  const refundId = document.getElementById('process-refund-id').value;
+  const execType = document.getElementById('process-refund-exec-type').value;
+  const transactionRef = document.getElementById('process-refund-ref').value.trim();
+  const bankDetails = document.getElementById('process-refund-bank').value.trim();
+  const notes = document.getElementById('process-refund-notes').value.trim();
+
+  const btn = document.getElementById('btn-submit-process-refund');
+  if (btn) btn.disabled = true;
+
+  try {
+    const res = await API.emdRefunds.admin.process(refundId, {
+      execution_type: execType,
+      transaction_reference: transactionRef,
+      bank_details: bankDetails,
+      remarks: notes
+    });
+    UI.showToast(res.message, 'success');
+    bootstrap.Modal.getInstance(document.getElementById('adminProcessRefundModal'))?.hide();
+    await loadAdminEmdRefundDesk();
+  } catch (err) {
+    UI.showToast(err.message || 'Refund execution failed.', 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+};
+
+// ====================================================
+// MODULE 6: FINANCIAL REPORTING (FRONTEND)
+// ====================================================
+
+/**
+ * Loads Institutional Financial Liabilities & EMD Settlement Statement
+ */
+window.loadFinancialReport = async function() {
+  try {
+    const res = await API.reports.getFinancial();
+    if (!res.success || !res.data) return;
+    const { contractorPayments: cp, emdRefunds: emd, exceptions: exc } = res.data;
+
+    // Contractor metrics
+    const elCpAppr = document.getElementById('report-fin-approved-payable');
+    const elCpApprCount = document.getElementById('report-fin-awarded-contracts-count');
+    const elCpPaid = document.getElementById('report-fin-payments-completed');
+    const elCpPaidCount = document.getElementById('report-fin-settled-contracts-count');
+    const elCpRem = document.getElementById('report-fin-remaining-liabilities');
+    const elCpPendingVal = document.getElementById('report-fin-pending-claims-val');
+    const elCpPendingCount = document.getElementById('report-fin-pending-claims-count');
+
+    if (elCpAppr) elCpAppr.textContent = UI.formatCurrency(cp.totalApprovedPayable);
+    if (elCpApprCount) elCpApprCount.textContent = `${cp.totalAwardedContracts} Awarded Contracts`;
+    if (elCpPaid) elCpPaid.textContent = UI.formatCurrency(cp.totalPaymentsCompleted);
+    if (elCpPaidCount) elCpPaidCount.textContent = `${cp.fullyPaidContractsCount} Fully Settled`;
+    if (elCpRem) elCpRem.textContent = UI.formatCurrency(cp.remainingLiabilities);
+    if (elCpPendingVal) elCpPendingVal.textContent = UI.formatCurrency(cp.pendingClaimsValue);
+    if (elCpPendingCount) elCpPendingCount.textContent = `${cp.pendingClaimsCount} Claims Awaiting Review`;
+
+    // EMD metrics
+    const elEmdColl = document.getElementById('report-fin-emd-collected');
+    const elEmdCollCount = document.getElementById('report-fin-emd-collected-count');
+    const elEmdElig = document.getElementById('report-fin-emd-eligible');
+    const elEmdEligCount = document.getElementById('report-fin-emd-eligible-count');
+    const elEmdRef = document.getElementById('report-fin-emd-refunded');
+    const elEmdRefCount = document.getElementById('report-fin-emd-refunded-count');
+    const elEmdForf = document.getElementById('report-fin-emd-forfeited');
+    const elEmdForfCount = document.getElementById('report-fin-emd-forfeited-count');
+
+    if (elEmdColl) elEmdColl.textContent = UI.formatCurrency(emd.totalEmdCollected);
+    if (elEmdCollCount) elEmdCollCount.textContent = `${emd.totalEmdTransactionsCount} Inbound EMD Deposits`;
+    if (elEmdElig) elEmdElig.textContent = UI.formatCurrency(emd.totalEmdEligibleForRefund);
+    if (elEmdEligCount) elEmdEligCount.textContent = `${emd.emdEligibleCount} Bidders Eligible`;
+    if (elEmdRef) elEmdRef.textContent = UI.formatCurrency(emd.totalEmdRefundsCompletedAmount);
+    if (elEmdRefCount) elEmdRefCount.textContent = `${emd.emdRefundsCompletedCount} Successfully Returned`;
+    if (elEmdForf) elEmdForf.textContent = UI.formatCurrency(emd.totalEmdForfeituresAmount);
+    if (elEmdForfCount) elEmdForfCount.textContent = `${emd.totalEmdForfeituresCount} Deposits Forfeited`;
+
+    // Forfeitures Table
+    const forfTable = document.getElementById('report-forfeitures-table-body');
+    if (forfTable) {
+      const list = emd.forfeituresList || [];
+      if (list.length === 0) {
+        forfTable.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3">No EMD deposits forfeited to date. All evaluated deposits remain eligible or pending review.</td></tr>';
+      } else {
+        forfTable.innerHTML = list.map(f => `
+          <tr>
+            <td><code>${f.tender_code}</code><div class="small text-muted text-truncate" style="max-width: 180px;">${f.tender_title || ''}</div></td>
+            <td><strong>${f.contractor_name}</strong><div class="small text-muted">${f.license_number || ''}</div></td>
+            <td class="fw-bold text-danger">${UI.formatCurrency(f.forfeited_amount)}</td>
+            <td>${UI.formatDate(f.forfeiture_date)}</td>
+            <td><span class="badge bg-danger bg-opacity-10 text-danger border border-danger">${f.forfeiture_reason || 'Condition breach'}</span></td>
+            <td><small class="text-muted">${f.approved_by_name || 'Authority'}</small></td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    // Failed & Disputed Table
+    const excTable = document.getElementById('report-failed-disputed-table-body');
+    if (excTable) {
+      const rows = [];
+      (exc.failedInboundPayments || []).forEach(p => {
+        rows.push(`
+          <tr>
+            <td><code>${p.receipt_no}</code></td>
+            <td><span class="badge bg-secondary">Inbound ${p.payment_type}</span></td>
+            <td><code>${p.tender_code}</code></td>
+            <td>${p.company_name}</td>
+            <td class="fw-bold text-danger">${UI.formatCurrency(p.amount)}</td>
+            <td>${UI.formatDateTime(p.failed_at)}</td>
+            <td class="text-danger small">${p.failure_reason || 'Gateway Transaction Failed'}</td>
+          </tr>
+        `);
+      });
+      (exc.disputedContracts || []).forEach(c => {
+        rows.push(`
+          <tr>
+            <td><code>${c.work_order_ref || 'WO-#' + c.id}</code></td>
+            <td><span class="badge bg-warning text-dark">Contract Claim</span></td>
+            <td><code>${c.tender_code}</code></td>
+            <td>${c.company_name}</td>
+            <td class="fw-bold text-warning">${UI.formatCurrency(c.contract_amount)}</td>
+            <td>${UI.formatDateTime(c.reported_at)}</td>
+            <td class="text-warning small">${c.rejection_reason || 'Work Inspection / Claim Rejected'}</td>
+          </tr>
+        `);
+      });
+
+      if (rows.length === 0) {
+        excTable.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">No failed or disputed transactions recorded. All financial operations fully reconciled.</td></tr>';
+      } else {
+        excTable.innerHTML = rows.join('');
+      }
+    }
+  } catch (err) {
+    console.error('Error loading financial reports:', err);
+  }
+};
+
 

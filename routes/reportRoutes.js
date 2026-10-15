@@ -36,7 +36,7 @@ router.get('/summary', async (req, res) => {
 
     // 4. Monthly Bidding Activity (Last 6 months)
     const monthlyActivity = await dbHelper.all(`
-      SELECT strftime('%Y-%m', submission_date) as month, COUNT(*) as bid_count
+      SELECT to_char(submission_date, 'YYYY-MM') as month, COUNT(*) as bid_count
       FROM bids
       GROUP BY month
       ORDER BY month ASC
@@ -265,6 +265,132 @@ router.get('/tender/:id/pdf', async (req, res) => {
     doc.end();
   } catch (error) {
     console.error('PDF error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// GET /api/reports/financial (Comprehensive Financial & Procurement Liabilities Report)
+router.get('/financial', async (req, res) => {
+  try {
+    // 1. Contractor Payment Management Metrics
+    const contractorMetrics = await dbHelper.get(`
+      SELECT
+        COUNT(*) as total_awarded_contracts,
+        COALESCE(SUM(contract_amount), 0) as total_awarded_contract_value,
+        COALESCE(SUM(approved_payable_amount), 0) as total_approved_payable,
+        COALESCE(SUM(total_paid_amount), 0) as total_contractor_payments_completed,
+        COALESCE(SUM(remaining_payable_amount), 0) as remaining_contractor_liabilities,
+        SUM(CASE WHEN claim_status IN ('claim_submitted', 'approval_pending') THEN 1 ELSE 0 END) as pending_claims_count,
+        COALESCE(SUM(CASE WHEN claim_status IN ('claim_submitted', 'approval_pending') THEN claimed_amount ELSE 0 END), 0) as pending_claims_value,
+        SUM(CASE WHEN claim_status = 'fully_paid' THEN 1 ELSE 0 END) as fully_paid_contracts_count,
+        SUM(CASE WHEN claim_status = 'partially_paid' THEN 1 ELSE 0 END) as partially_paid_contracts_count,
+        SUM(CASE WHEN work_status = 'disputed' OR claim_status = 'rejected' THEN 1 ELSE 0 END) as disputed_claims_count
+      FROM contractor_payments
+    `);
+
+    // 2. EMD Refund Management Metrics
+    const emdCollectedStats = await dbHelper.get(`
+      SELECT
+        COUNT(*) as total_emd_transactions_count,
+        COALESCE(SUM(amount_rupees), 0) as total_emd_collected
+      FROM payments
+      WHERE payment_type = 'EMD' AND payment_status IN ('PAID', 'REFUNDED')
+    `);
+
+    const emdRefundMetrics = await dbHelper.get(`
+      SELECT
+        COUNT(*) as total_assessed_records,
+        COALESCE(SUM(CASE WHEN refund_status IN ('ELIGIBLE', 'APPROVED') THEN refund_eligible_amount ELSE 0 END), 0) as total_emd_eligible_for_refund,
+        SUM(CASE WHEN refund_status IN ('ELIGIBLE', 'APPROVED') THEN 1 ELSE 0 END) as emd_eligible_count,
+        COALESCE(SUM(CASE WHEN refund_status IN ('PENDING_REVIEW', 'ELIGIBLE') THEN refund_eligible_amount ELSE 0 END), 0) as emd_refunds_pending_approval_value,
+        SUM(CASE WHEN refund_status IN ('PENDING_REVIEW', 'ELIGIBLE') THEN 1 ELSE 0 END) as emd_refunds_pending_approval_count,
+        COALESCE(SUM(CASE WHEN refund_status = 'APPROVED' THEN refund_amount ELSE 0 END), 0) as emd_approved_awaiting_payout_value,
+        SUM(CASE WHEN refund_status = 'APPROVED' THEN 1 ELSE 0 END) as emd_approved_awaiting_payout_count,
+        COALESCE(SUM(CASE WHEN refund_status = 'COMPLETED' THEN refund_amount ELSE 0 END), 0) as total_emd_refunds_completed_amount,
+        SUM(CASE WHEN refund_status = 'COMPLETED' THEN 1 ELSE 0 END) as total_emd_refunds_completed_count,
+        COALESCE(SUM(CASE WHEN refund_status = 'FORFEITED' THEN original_emd_amount ELSE 0 END), 0) as total_emd_forfeitures_amount,
+        SUM(CASE WHEN refund_status = 'FORFEITED' THEN 1 ELSE 0 END) as total_emd_forfeitures_count
+      FROM emd_refund_records
+    `);
+
+    // 3. EMD Forfeitures List with recorded reasons
+    const forfeitures = await dbHelper.all(`
+      SELECT err.id, err.original_emd_amount as forfeited_amount, err.forfeiture_reason,
+             err.updated_at as forfeiture_date,
+             t.tender_code, t.title as tender_title,
+             c.company_name as contractor_name, c.license_number,
+             u.name as approved_by_name
+      FROM emd_refund_records err
+      JOIN tenders t ON err.tender_id = t.id
+      JOIN contractors c ON err.contractor_id = c.id
+      LEFT JOIN users u ON err.approved_by = u.id
+      WHERE err.refund_status = 'FORFEITED'
+      ORDER BY err.updated_at DESC
+    `);
+
+    // 4. Failed or Disputed Transactions
+    const failedPayments = await dbHelper.all(`
+      SELECT p.id, p.receipt_no, p.payment_type, p.amount_rupees as amount,
+             p.failure_reason, p.created_at as failed_at,
+             t.tender_code, c.company_name
+      FROM payments p
+      JOIN tenders t ON p.tender_id = t.id
+      JOIN contractors c ON p.contractor_id = c.id
+      WHERE p.payment_status = 'FAILED'
+      ORDER BY p.created_at DESC
+      LIMIT 20
+    `);
+
+    const disputedContracts = await dbHelper.all(`
+      SELECT cp.id, cp.work_order_ref, cp.contract_amount, cp.rejection_reason,
+             cp.work_status, cp.claim_status, cp.updated_at as reported_at,
+             t.tender_code, c.company_name
+      FROM contractor_payments cp
+      JOIN tenders t ON cp.tender_id = t.id
+      JOIN contractors c ON cp.contractor_id = c.id
+      WHERE cp.work_status = 'disputed' OR cp.claim_status = 'rejected'
+      ORDER BY cp.updated_at DESC
+      LIMIT 20
+    `);
+
+    res.json({
+      success: true,
+      data: {
+        contractorPayments: {
+          totalAwardedContracts: parseInt(contractorMetrics.total_awarded_contracts, 10) || 0,
+          totalAwardedContractValue: parseFloat(contractorMetrics.total_awarded_contract_value) || 0,
+          totalApprovedPayable: parseFloat(contractorMetrics.total_approved_payable) || 0,
+          totalPaymentsCompleted: parseFloat(contractorMetrics.total_contractor_payments_completed) || 0,
+          remainingLiabilities: parseFloat(contractorMetrics.remaining_contractor_liabilities) || 0,
+          pendingClaimsCount: parseInt(contractorMetrics.pending_claims_count, 10) || 0,
+          pendingClaimsValue: parseFloat(contractorMetrics.pending_claims_value) || 0,
+          fullyPaidContractsCount: parseInt(contractorMetrics.fully_paid_contracts_count, 10) || 0,
+          partiallyPaidContractsCount: parseInt(contractorMetrics.partially_paid_contracts_count, 10) || 0,
+          disputedClaimsCount: parseInt(contractorMetrics.disputed_claims_count, 10) || 0
+        },
+        emdRefunds: {
+          totalEmdCollected: parseFloat(emdCollectedStats.total_emd_collected) || 0,
+          totalEmdTransactionsCount: parseInt(emdCollectedStats.total_emd_transactions_count, 10) || 0,
+          totalEmdEligibleForRefund: parseFloat(emdRefundMetrics.total_emd_eligible_for_refund) || 0,
+          emdEligibleCount: parseInt(emdRefundMetrics.emd_eligible_count, 10) || 0,
+          emdRefundsPendingApprovalCount: parseInt(emdRefundMetrics.emd_refunds_pending_approval_count, 10) || 0,
+          emdRefundsPendingApprovalValue: parseFloat(emdRefundMetrics.emd_refunds_pending_approval_value) || 0,
+          emdApprovedAwaitingPayoutCount: parseInt(emdRefundMetrics.emd_approved_awaiting_payout_count, 10) || 0,
+          emdApprovedAwaitingPayoutValue: parseFloat(emdRefundMetrics.emd_approved_awaiting_payout_value) || 0,
+          emdRefundsCompletedCount: parseInt(emdRefundMetrics.total_emd_refunds_completed_count, 10) || 0,
+          totalEmdRefundsCompletedAmount: parseFloat(emdRefundMetrics.total_emd_refunds_completed_amount) || 0,
+          totalEmdForfeituresCount: parseInt(emdRefundMetrics.total_emd_forfeitures_count, 10) || 0,
+          totalEmdForfeituresAmount: parseFloat(emdRefundMetrics.total_emd_forfeitures_amount) || 0,
+          forfeituresList: forfeitures
+        },
+        exceptions: {
+          failedInboundPayments: failedPayments,
+          disputedContracts
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Financial report generation error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
