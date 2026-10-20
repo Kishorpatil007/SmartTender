@@ -94,6 +94,38 @@ function updateNavState(isLoggedIn) {
   }
 }
 
+// ----------------------------------------------------
+// MOBILE NAVIGATION DRAWER CONTROLLER
+// ----------------------------------------------------
+function openMobileSidebar() {
+  const sidebar = document.getElementById('appSidebar');
+  const backdrop = document.getElementById('sidebar-backdrop');
+  if (sidebar) sidebar.classList.add('show');
+  if (backdrop) backdrop.classList.add('show');
+  document.body.classList.add('sidebar-open');
+}
+
+function closeMobileSidebar() {
+  const sidebar = document.getElementById('appSidebar');
+  const backdrop = document.getElementById('sidebar-backdrop');
+  if (sidebar) sidebar.classList.remove('show');
+  if (backdrop) backdrop.classList.remove('show');
+  document.body.classList.remove('sidebar-open');
+}
+
+function toggleMobileSidebar() {
+  const sidebar = document.getElementById('appSidebar');
+  if (sidebar && sidebar.classList.contains('show')) {
+    closeMobileSidebar();
+  } else {
+    openMobileSidebar();
+  }
+}
+
+window.openMobileSidebar = openMobileSidebar;
+window.closeMobileSidebar = closeMobileSidebar;
+window.toggleMobileSidebar = toggleMobileSidebar;
+
 function navigateTo(viewName) {
   // Role Access Guard
   const protectedViews = {
@@ -724,7 +756,7 @@ window.openBidModalForTender = async function(tenderId, tenderCode, title) {
 };
 
 // ----------------------------------------------------
-// 5. EVALUATOR DESK & L1 MATRIX
+// 5. EVALUATOR DESK & COMPARATIVE STATEMENT
 // ----------------------------------------------------
 async function loadEvaluatorView() {
   try {
@@ -777,7 +809,7 @@ window.openEvaluationDeskForTender = async function(tenderId) {
       bidsTable.innerHTML = bids.map((b, idx) => `
         <tr class="${b.is_l1 ? 'row-l1' : ''}">
           <td>
-            ${b.is_l1 ? '<span class="badge-l1">L1</span>' : `<span class="badge bg-secondary">${b.financial_rank}</span>`}
+            ${b.is_l1 ? '<span class="badge-l1">Lowest (Rank 1)</span>' : `<span class="badge bg-secondary">${b.financial_rank}</span>`}
           </td>
           <td>
             <strong>${b.company_name}</strong>
@@ -1514,12 +1546,36 @@ function setupEventListeners() {
     }
   });
 
+  // Touch swipe gesture to close mobile drawer on Android/touch devices
+  let touchStartX = 0;
+  let touchStartY = 0;
+  const sidebarEl = document.getElementById('appSidebar');
+  if (sidebarEl) {
+    sidebarEl.addEventListener('touchstart', (e) => {
+      touchStartX = e.changedTouches[0].clientX;
+      touchStartY = e.changedTouches[0].clientY;
+    }, { passive: true });
+
+    sidebarEl.addEventListener('touchend', (e) => {
+      const touchEndX = e.changedTouches[0].clientX;
+      const touchEndY = e.changedTouches[0].clientY;
+      const diffX = touchEndX - touchStartX;
+      const diffY = touchEndY - touchStartY;
+      if (diffX < -45 && Math.abs(diffY) < 60) {
+        closeMobileSidebar();
+      }
+    }, { passive: true });
+  }
+
   // Navigation links
   document.querySelectorAll('[data-view]').forEach(el => {
     el.addEventListener('click', (e) => {
       e.preventDefault();
       const view = el.getAttribute('data-view');
       navigateTo(view);
+      if (window.innerWidth < 992) {
+        closeMobileSidebar();
+      }
     });
   });
 

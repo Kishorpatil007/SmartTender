@@ -10,11 +10,11 @@ A full-stack, enterprise-grade e-procurement and tender management web applicati
    - **Admin**: User management, Contractor verification & approval queue, System audit logs, Department statistics.
    - **Tender Authority**: Create and publish procurement tenders, specify budgets, EMD (Earnest Money Deposit), technical criteria, upload BoQ/RFP documents, manage submission deadlines.
    - **Contractor / Bidder**: Company profile registration with license details, tender discovery & filtering, sealed bid submission (commercial quotation + technical proposal + document uploads), real-time application status tracker.
-   - **Evaluator**: Document compliance audit, automated **L1 Lowest Bidder** calculation, **QCBS (Quality & Cost Based Selection)** scoring matrix, Winner recommendation, and final Awarding.
+   - **Evaluator**: Document compliance audit, automated **Lowest Responsive Bidder** calculation, **QCBS (Quality & Cost Based Selection)** scoring matrix, Winner recommendation, and final Awarding.
    - **Reports & Analytics**: Visual charts (Allocated budget by department, tender status distribution), contractor performance leaderboard, and **official downloadable PDF Reports (Comparative Statements & Letters of Award)**.
 
 2. **Automated Bid Comparison & Ranking Engine**
-   - Instant calculation of L1 (Lowest Commercial Quote).
+   - Instant calculation of Lowest Commercial Quote (Rank 1).
    - Budget variance and percentage deviation calculation.
    - Combined QCBS score computation (70% Technical weightage + 30% Financial ratio weightage).
 
@@ -114,7 +114,7 @@ smart-tender-system/
 │   ├── adminRoutes.js               # User management, contractor verification, logs
 │   ├── tenderRoutes.js              # Tender publishing & document management
 │   ├── contractorRoutes.js          # Contractor bids submission & status tracker
-│   ├── evaluationRoutes.js          # L1 comparison, QCBS scoring & award logic
+│   ├── evaluationRoutes.js          # Lowest bid comparison, QCBS scoring & award logic
 │   └── reportRoutes.js              # Analytics endpoints & PDF generation
 ├── public/
 │   ├── index.html                   # Responsive frontend interface

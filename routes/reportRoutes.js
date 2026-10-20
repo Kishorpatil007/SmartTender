@@ -218,7 +218,7 @@ router.get('/tender/:id/pdf', async (req, res) => {
       doc.text(`Procurement Lifecycle Status: ${tender.status.toUpperCase()}`);
 
       doc.moveDown(1.5);
-      doc.fontSize(10.5).font('Helvetica-Bold').text('CONTRACTOR BID COMPARISON TABLE (L1 MATRIX):');
+      doc.fontSize(10.5).font('Helvetica-Bold').text('CONTRACTOR BID COMPARISON TABLE (LOWEST BID COMPARISON):');
       doc.moveDown(0.5);
 
       // Table Header
@@ -242,7 +242,7 @@ router.get('/tender/:id/pdf', async (req, res) => {
           const isLowest = idx === 0;
           doc.rect(40, y, 515, 18).fill(idx % 2 === 0 ? '#ffffff' : '#f8fafc');
           doc.fillColor(isLowest ? '#1a56db' : '#2d3748');
-          doc.text(`L${idx + 1}`, 45, y + 4);
+          doc.text(`Rank ${idx + 1}`, 45, y + 4);
           doc.text(bid.company_name.substring(0, 32), 85, y + 4);
           doc.text(`₹${bid.bid_amount.toLocaleString('en-IN')}`, 270, y + 4);
           doc.text(`${bid.technical_score || bid.eval_tech_score || 'N/A'}/100`, 390, y + 4);
@@ -254,7 +254,7 @@ router.get('/tender/:id/pdf', async (req, res) => {
       doc.y = y + 15;
       doc.fontSize(9.5).font('Helvetica-Bold').fillColor('#2d3748').text('PURCHASE & EVALUATION COMMITTEE AUDIT REMARKS:');
       doc.font('Helvetica').fontSize(8.5).text(
-        tender.award_notes || 'All submitted bids were verified against statutory compliance, technical specifications, and OEM credentials. The L1 quote has been evaluated and found to be economically viable and compliant with MIT College procurement guidelines.',
+        tender.award_notes || 'All submitted bids were verified against statutory compliance, technical specifications, and OEM credentials. The lowest quote has been evaluated and found to be economically viable and compliant with MIT College procurement guidelines.',
         { align: 'justify', lineGap: 2 }
       );
     }

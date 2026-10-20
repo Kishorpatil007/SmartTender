@@ -67,10 +67,18 @@ h5, .h5 { font-size: clamp(0.95rem, 1.5vw, 1.15rem); }
   transform: scale(1.05);
 }
 
+.brand-text-group {
+  min-width: 0;
+  overflow: hidden;
+}
+
 .brand-title {
-  font-size: clamp(0.95rem, 2.4vw, 1.15rem);
+  font-size: clamp(0.85rem, 2.5vw, 1.15rem);
   letter-spacing: -0.2px;
   line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .brand-badge {
@@ -86,11 +94,27 @@ h5, .h5 { font-size: clamp(0.95rem, 1.5vw, 1.15rem); }
 .brand-subtitle {
   font-size: 0.68rem;
   letter-spacing: 0.8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .brand-subtitle-short {
   font-size: 0.65rem;
   letter-spacing: 0.4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 420px) {
+  .navbar-brand-icon {
+    width: 32px;
+    height: 32px;
+  }
+  .brand-subtitle-short {
+    display: none !important;
+  }
 }
 
 /* ==========================================================================
@@ -162,6 +186,12 @@ h5, .h5 { font-size: clamp(0.95rem, 1.5vw, 1.15rem); }
   color: #94a3b8;
 }
 
+/* Body lock when mobile sidebar is open */
+body.sidebar-open {
+  overflow: hidden !important;
+  touch-action: none;
+}
+
 /* Mobile Sidebar Drawer (< 992px) */
 @media (max-width: 991.98px) {
   .app-sidebar {
@@ -169,32 +199,36 @@ h5, .h5 { font-size: clamp(0.95rem, 1.5vw, 1.15rem); }
     top: 0;
     left: 0;
     bottom: 0;
-    width: min(300px, 86vw);
+    width: min(310px, 86vw);
     height: 100dvh;
+    height: 100vh;
     z-index: 1060;
-    transform: translateX(-100%);
+    transform: translate3d(-100%, 0, 0);
     box-shadow: none;
-    padding-top: 16px;
+    padding-top: max(16px, env(safe-area-inset-top));
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s ease;
+    will-change: transform;
   }
 
   .app-sidebar.show {
-    transform: translateX(0);
-    box-shadow: 0 0 50px rgba(10, 37, 64, 0.35);
+    transform: translate3d(0, 0, 0);
+    box-shadow: 0 0 50px rgba(10, 37, 64, 0.45);
   }
 
   /* Backdrop Overlay */
   .sidebar-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(10, 37, 64, 0.55);
+    background: rgba(10, 37, 64, 0.6);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
     z-index: 1055;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.3s ease;
+    transition: opacity 0.25s ease;
   }
 
   .sidebar-backdrop.show {
@@ -332,7 +366,8 @@ h5, .h5 { font-size: clamp(0.95rem, 1.5vw, 1.15rem); }
 .badge-closed { background-color: #f3f4f6; color: #4b5563; }
 .badge-cancelled { background-color: #fee2e2; color: #b91c1c; }
 
-.badge-l1 {
+.badge-l1,
+.badge-lowest {
   background: linear-gradient(135deg, #10b981, #059669);
   color: white;
   font-weight: 700;
@@ -440,7 +475,8 @@ h5, .h5 { font-size: clamp(0.95rem, 1.5vw, 1.15rem); }
   white-space: nowrap;
 }
 
-.row-l1 {
+.row-l1,
+.row-lowest {
   background-color: #f0fdf4 !important;
 }
 
@@ -720,6 +756,66 @@ textarea {
 
   .card {
     border-radius: 12px !important;
+  }
+}
+
+/* Responsive Horizontal Filter Buttons on Mobile */
+.btn-group-responsive {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  max-width: 100%;
+  padding-bottom: 4px;
+  gap: 4px;
+}
+
+.btn-group-responsive::-webkit-scrollbar {
+  display: none;
+}
+
+.btn-group-responsive .btn {
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  border-radius: 8px !important;
+}
+
+/* Android & Small Mobile (< 576px) Card & Layout Enhancements */
+@media (max-width: 575.98px) {
+  .app-main {
+    padding: 12px 10px;
+  }
+
+  .stat-card {
+    padding: 12px 10px;
+    border-radius: 10px;
+  }
+
+  .stat-card .stat-icon-wrapper {
+    width: 36px;
+    height: 36px;
+    font-size: 1.1rem;
+    border-radius: 8px;
+  }
+
+  .stat-card .stat-label {
+    font-size: 0.72rem;
+    line-height: 1.25;
+  }
+
+  .stat-card .stat-value {
+    font-size: clamp(1.05rem, 4.2vw, 1.35rem);
+  }
+
+  .table td, .table th {
+    padding: 9px 8px;
+    font-size: 0.8rem;
+  }
+
+  .nav-link {
+    font-size: 0.88rem;
+    padding: 10px 16px;
   }
 }
 

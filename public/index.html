@@ -151,7 +151,7 @@
           <div class="sidebar-section-title">Purchase Committee</div>
           <li class="nav-item">
             <a class="nav-link" data-view="evaluator">
-              <i class="bi bi-clipboard-data"></i> Evaluation Desk & L1
+              <i class="bi bi-clipboard-data"></i> Evaluation Desk & Bids
             </a>
           </li>
         </div>
@@ -190,7 +190,7 @@
               </span>
               <h1 class="display-6 fw-bold mb-3">MIT Smart Tender Management System</h1>
               <p class="lead text-white-50 mb-4" style="font-size: 1.05rem;">
-                Maharashtra Institute of Technology, Chhatrapati Sambhajinagar — Official digitized e-Tendering system for university laboratories, campus IT infrastructure, research equipment, civil renovation, and annual maintenance contracts with automated L1 evaluation and AI-assisted compliance verification.
+                Maharashtra Institute of Technology, Chhatrapati Sambhajinagar — Official digitized e-Tendering system for university laboratories, campus IT infrastructure, research equipment, civil renovation, and annual maintenance contracts with automated lowest bidder evaluation and AI-assisted compliance verification.
               </p>
               <div class="d-flex flex-column flex-sm-row gap-2 gap-sm-3">
                 <button class="btn btn-primary btn-lg px-4 py-2.5 shadow-sm" onclick="navigateTo('tenders')">
@@ -665,13 +665,13 @@
       </div>
 
       <!-- ======================================================== -->
-      <!-- 5. EVALUATOR DESK & L1 MATRIX                            -->
+      <!-- 5. EVALUATOR DESK & COMPARATIVE STATEMENT            -->
       <!-- ======================================================== -->
       <div id="view-evaluator" class="view-container d-none">
         <div class="d-flex justify-content-between align-items-center mb-4">
           <div>
             <h3 class="fw-bold mb-1">Purchase & Technical Evaluation Desk</h3>
-            <p class="text-muted mb-0">Evaluate technical proposals, generate L1 comparative statements, and award contracts</p>
+            <p class="text-muted mb-0">Evaluate technical proposals, generate comparative statements, and award contracts</p>
           </div>
         </div>
 
@@ -748,8 +748,8 @@
               </h5>
               <span id="admin-pending-staff-badge" class="badge bg-warning text-dark rounded-pill ms-2" style="font-size: 0.75rem;">0 Pending</span>
             </div>
-            <div class="d-flex gap-2">
-              <div class="btn-group btn-group-sm" role="group" id="admin-staff-filter-group">
+            <div class="d-flex gap-2 flex-wrap">
+              <div class="btn-group btn-group-sm btn-group-responsive" role="group" id="admin-staff-filter-group">
                 <button type="button" class="btn btn-outline-primary active" onclick="filterAdminStaff('all', this)">All Staff</button>
                 <button type="button" class="btn btn-outline-warning text-dark" onclick="filterAdminStaff('pending', this)">Pending Requests</button>
                 <button type="button" class="btn btn-outline-info text-dark" onclick="filterAdminStaff('invited', this)">Invited</button>
@@ -786,7 +786,7 @@
               <i class="bi bi-patch-check-fill text-primary me-2"></i>Vendor Registration & KYC Verification Queue
               <span id="admin-pending-queue-badge" class="badge bg-warning text-dark rounded-pill ms-2" style="font-size: 0.75rem;">0 Pending</span>
             </h5>
-            <div class="btn-group btn-group-sm" role="group" id="admin-vendor-filter-group">
+            <div class="btn-group btn-group-sm btn-group-responsive" role="group" id="admin-vendor-filter-group">
               <button type="button" class="btn btn-outline-primary active" onclick="filterAdminVendors('all', this)">All Vendors</button>
               <button type="button" class="btn btn-outline-warning text-dark" onclick="filterAdminVendors('pending', this)">Pending KYC</button>
               <button type="button" class="btn btn-outline-success" onclick="filterAdminVendors('approved', this)">Verified</button>
@@ -1533,7 +1533,7 @@
         <div class="ai-avatar"><i class="bi bi-robot"></i></div>
         <div class="ai-msg-bubble">
           Hello! 👋 I am <strong>MIT TenderBot</strong>, the AI Procurement Assistant for <strong>Maharashtra Institute of Technology (MIT), Chhatrapati Sambhajinagar</strong>.<br><br>
-          Ask me anything about active college tenders, eligibility criteria, EMD rules, L1 ranking formulas, or how to apply for bids!
+          Ask me anything about active college tenders, eligibility criteria, EMD rules, lowest bidder ranking formulas, or how to apply for bids!
         </div>
       </div>
     </div>
@@ -1564,17 +1564,17 @@
           <ul class="nav nav-pills nav-fill w-100 bg-light p-1 rounded-pill" id="authTab" role="tablist">
             <li class="nav-item" role="presentation">
               <button class="nav-link active rounded-pill fw-semibold py-2 small" id="tab-signin-btn" data-bs-toggle="pill" data-bs-target="#tab-signin" type="button" role="tab">
-                <i class="bi bi-box-arrow-in-right me-1"></i>Sign In
+                <i class="bi bi-box-arrow-in-right me-1"></i><span>Sign In</span>
               </button>
             </li>
             <li class="nav-item" role="presentation">
               <button class="nav-link rounded-pill fw-semibold py-2 small" id="tab-register-btn" data-bs-toggle="pill" data-bs-target="#tab-register" type="button" role="tab">
-                <i class="bi bi-briefcase me-1"></i>Contractor KYC
+                <i class="bi bi-briefcase me-1"></i><span class="d-none d-sm-inline">Contractor KYC</span><span class="d-inline d-sm-none">Vendor</span>
               </button>
             </li>
             <li class="nav-item" role="presentation">
               <button class="nav-link rounded-pill fw-semibold py-2 small" id="tab-staff-request-btn" data-bs-toggle="pill" data-bs-target="#tab-staff-request" type="button" role="tab">
-                <i class="bi bi-person-badge me-1"></i>Request Staff Account
+                <i class="bi bi-person-badge me-1"></i><span class="d-none d-sm-inline">Request Staff Account</span><span class="d-inline d-sm-none">Staff</span>
               </button>
             </li>
           </ul>
@@ -2066,13 +2066,13 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <div class="d-flex justify-content-between align-items-center mb-3 p-2.5 bg-light rounded-3">
+          <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center mb-3 p-2.5 bg-light rounded-3 gap-2">
             <div>
               <span class="text-muted small">Estimated College Budget:</span>
               <strong id="eval-desk-budget" class="text-success ms-1 fs-6"></strong>
             </div>
             <div class="small text-muted">
-              <i class="bi bi-info-circle me-1 text-primary"></i> QCBS Formula: <strong>70% Technical + 30% Financial</strong> (L1 Base)
+              <i class="bi bi-info-circle me-1 text-primary"></i> QCBS Formula: <strong>70% Technical + 30% Financial</strong> (Lowest Bid Base)
             </div>
           </div>
 

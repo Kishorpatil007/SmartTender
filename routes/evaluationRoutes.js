@@ -64,18 +64,18 @@ router.get('/tenders/:tenderId/bids', async (req, res) => {
     }
 
     // Calculate comparative metrics:
-    // 1. Find lowest bid (L1)
+    // 1. Find lowest bid
     const validBids = bids.filter(b => b.status !== 'disqualified' && b.bid_amount > 0);
     const minBidAmount = validBids.length > 0 ? Math.min(...validBids.map(b => b.bid_amount)) : 0;
 
-    // 2. Compute L1 rank and automated financial/QCBS scores
+    // 2. Compute lowest bid rank and automated financial/QCBS scores
     const comparativeBids = bids.map((b, index) => {
       const isL1 = b.bid_amount === minBidAmount;
       const budgetDeviation = tender.estimated_budget > 0
         ? (((b.bid_amount - tender.estimated_budget) / tender.estimated_budget) * 100).toFixed(2)
         : 0;
       
-      // Auto Financial Score formula: (L1 / Bid Amount) * 100
+      // Auto Financial Score formula: (Lowest Bid / Bid Amount) * 100
       const autoFinancialScore = minBidAmount > 0 ? ((minBidAmount / b.bid_amount) * 100).toFixed(2) : 0;
 
       // Combined QCBS (70% Technical, 30% Financial)
@@ -86,7 +86,7 @@ router.get('/tenders/:tenderId/bids', async (req, res) => {
       return {
         ...b,
         is_l1: isL1,
-        financial_rank: `L${index + 1}`,
+        financial_rank: `Rank ${index + 1}`,
         budget_deviation_percent: budgetDeviation,
         auto_financial_score: parseFloat(autoFinancialScore),
         computed_combined_score: parseFloat(combinedScore)

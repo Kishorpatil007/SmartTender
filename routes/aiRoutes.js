@@ -20,7 +20,7 @@ router.get('/suggestions', async (req, res) => {
       "Show all active tenders for MIT College",
       "What is the eligibility criteria for the AI Lab HPC Cluster tender?",
       "How do contractors submit sealed bids on this portal?",
-      "What is the L1 lowest bidder calculation formula?",
+      "What is the lowest bidder calculation formula?",
       "What documents are required for contractor registration?"
     ];
 
@@ -163,7 +163,7 @@ router.post('/chat', async (req, res) => {
         `   - Upload your technical proposal, solvency certificate, GSTIN, and experience certificates.\n` +
         `   - Your quote is encrypted and remains sealed until the official bid opening date.\n\n` +
         `5. **Real-Time Status Tracking:**\n` +
-        `   - Track your bid in the **Contractor Workspace** through stages: \`Submitted\` ➔ \`Under Review\` ➔ \`Technical Qualified\` ➔ \`Awarded / L1\`.`;
+        `   - Track your bid in the **Contractor Workspace** through stages: \`Submitted\` ➔ \`Under Review\` ➔ \`Technical Qualified\` ➔ \`Awarded / Lowest Bidder\`.`;
 
     // Case E: Document Requirements & Compliance
     } else if (query.includes('document') || query.includes('eligibility') || query.includes('criteria') || query.includes('license') || query.includes('gst') || query.includes('pan')) {
@@ -175,21 +175,21 @@ router.post('/chat', async (req, res) => {
         `- **OEM Authorization:** Manufacturer Authorization Form (MAF) for hardware/machinery tenders.\n` +
         `- **Earnest Money Deposit (EMD):** Bank Guarantee or online payment proof as specified in the tender notice (MSME/NSIC exemptions apply as per Govt of Maharashtra norms).`;
 
-    // Case F: L1 Ranking & QCBS Evaluation Formula
-    } else if (query.includes('l1') || query.includes('lowest') || query.includes('qcbs') || query.includes('evaluation') || query.includes('scoring') || query.includes('formula') || query.includes('how are bids evaluated')) {
+    // Case F: Lowest Bidder Ranking & QCBS Evaluation Formula
+    } else if (query.includes('lowest') || query.includes('qcbs') || query.includes('evaluation') || query.includes('scoring') || query.includes('formula') || query.includes('how are bids evaluated')) {
       responseText = `### ⚖️ **Evaluation & Ranking Methodology at MIT College:**\n\n` +
         `MIT Chhatrapati Sambhajinagar follows a transparent double-envelope evaluation system:\n\n` +
         `1. **Stage 1 - Technical Evaluation (70% Weightage):**\n` +
         `   - The Purchase Committee scores technical proposals (0–100) based on equipment specifications, past experience, project timeline, and OEM credentials.\n` +
         `   - Minimum qualifying technical score is **70/100**.\n\n` +
-        `2. **Stage 2 - Commercial Evaluation & L1 Determination (30% Weightage):**\n` +
+        `2. **Stage 2 - Commercial Evaluation & Lowest Bidder Determination (30% Weightage):**\n` +
         `   - Financial quotes are opened for technically qualified bidders.\n` +
-        `   - **L1 (Lowest Bidder)** receives a full financial score of 100.\n` +
-        `   - Other bidders receive: \`Financial Score = (L1 Quote / Bidder Quote) × 100\`.\n\n` +
+        `   - **Lowest Bidder (Rank 1)** receives a full financial score of 100.\n` +
+        `   - Other bidders receive: \`Financial Score = (Lowest Quote / Bidder Quote) × 100\`.\n\n` +
         `3. **Final Combined QCBS Score:**\n` +
         `   $$\\text{Total Score} = (\\text{Technical Score} \\times 0.70) + (\\text{Financial Score} \\times 0.30)$$\n\n` +
         `4. **Contract Award:**\n` +
-        `   - The highest combined QCBS score (or compliant L1) is recommended for contract award and receives the official **MIT Letter of Award (LOA)**.`;
+        `   - The highest combined QCBS score (or compliant lowest bidder) is recommended for contract award and receives the official **MIT Letter of Award (LOA)**.`;
 
     // Case G: General Greetings / Assistance
     } else if (query.includes('hello') || query.includes('hi') || query.includes('help') || query.includes('who are you') || query.includes('mit')) {
@@ -198,8 +198,8 @@ router.post('/chat', async (req, res) => {
         `- 🔍 **Active Tenders:** Search live procurement notices and budgets across all MIT departments.\n` +
         `- 📑 **Rules & Documents:** Clarify eligibility, EMD deposits, and document upload requirements.\n` +
         `- 📝 **Bidding Assistance:** Guide you step-by-step on submitting sealed bids.\n` +
-        `- ⚖️ **Evaluation Criteria:** Explain L1 commercial ranking and QCBS evaluation formulas.\n\n` +
-        `*Try asking: "What tenders are currently open for Computer Science?" or "How is the L1 bidder selected?"*`;
+        `- ⚖️ **Evaluation Criteria:** Explain commercial ranking and QCBS evaluation formulas.\n\n` +
+        `*Try asking: "What tenders are currently open for Computer Science?" or "How is the lowest bidder selected?"*`;
 
     // Default Fallback
     } else {
@@ -207,7 +207,7 @@ router.post('/chat', async (req, res) => {
         `Here is how I can assist you with procurement at **MIT Chhatrapati Sambhajinagar**:\n\n` +
         `- **View Active Tenders:** Type *"List open tenders"* or check the **Browse Tenders** tab.\n` +
         `- **Check Eligibility:** Ask *"What documents are required for bidding?"*.\n` +
-        `- **Evaluation Questions:** Ask *"How does the L1 evaluation work?"*.\n` +
+        `- **Evaluation Questions:** Ask *"How does lowest bidder evaluation work?"*.\n` +
         `- **Assistance for Vendors:** Ask *"How to submit a bid?"*.\n\n` +
         `Feel free to ask any specific question about college tenders or procurement rules!`;
     }
