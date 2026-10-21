@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "reset": "node database/seed.js",
+    "reset:all": "node database/reset_all.js",
     "seed": "node database/seed.js",
     "test": "node test.js && node test_payments.js && node test_financial_modules.js",
     "test:payments": "node test_payments.js",
