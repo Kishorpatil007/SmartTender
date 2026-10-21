@@ -415,13 +415,21 @@ window.viewTenderDetails = async function(tenderId) {
 
     window.currentViewingTender = t;
 
+    let payStatus = null;
+    if (currentUser && currentUser.role === 'contractor' && t.status === 'published') {
+      try {
+        payStatus = await API.payments.getTenderStatus(t.id);
+      } catch (payErr) {
+        console.warn('Could not load tender payment status:', payErr);
+      }
+    }
+
     // Payment Section Visibility & Data for Contractor
     const paymentSec = document.getElementById('modal-payment-section');
     if (paymentSec) {
-      if (currentUser && currentUser.role === 'contractor' && t.status === 'published') {
+      if (currentUser && currentUser.role === 'contractor' && t.status === 'published' && payStatus) {
         paymentSec.classList.remove('d-none');
         try {
-          const payStatus = await API.payments.getTenderStatus(t.id);
           const payConfig = await API.payments.getConfig();
 
           const modeBadge = document.getElementById('modal-payment-mode-badge');
